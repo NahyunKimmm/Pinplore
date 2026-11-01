@@ -975,7 +975,7 @@ function render(name){
 }
 
 /* Live maps (MapLibre + OpenFreeMap Positron). The Figma map image stays as a fallback until tiles load. */
-const MAPS={'5f81f9c73d':{c:[128.6003,38.2118],z:16.3},'8d063bd2c0':{c:[128.5917,38.2049],z:15.7},'1fe3120dbb':{c:[128.574,38.196],z:12.4,dim:.1,mks:1}};
+const MAPS={'5f81f9c73d':{c:[128.6003,38.2118],z:16.3},'8d063bd2c0':{c:[128.5917,38.2049],z:15.7},'1fe3120dbb':{c:[128.574,38.196],z:12.4,dim:.05,mks:1}};
 function initMaps(root){
   root._maps=[];
   if(typeof maplibregl==='undefined')return;
@@ -1024,7 +1024,7 @@ function mountMap(M,cfg,root){
         if(/place|city|town|village|country|state/.test(id)){sl(id,'text-transform','uppercase');sl(id,'text-letter-spacing',0.12);sl(id,'text-size',10);}}
     }
     M.style.backgroundImage='none';
-    // AI Itinerary: black 10% over the map (under route + pins) so they read clearly
+    // AI Itinerary: black 5% over the map (under route + pins) so they read clearly
     if(cfg.dim)try{map.addLayer({id:'dim',type:'background',paint:{'background-color':'#000000','background-opacity':cfg.dim}});}catch(e){}
     // the Figma route group carries a drop shadow meant for the drawn line; with a live map it would show as an empty box
     for(const o of overlays)if(!pins.includes(o)&&o.tagName!=='svg'){o.style.boxShadow='none';o.style.background='none';o.style.filter='none';}
