@@ -747,7 +747,7 @@ function anchor(root){
   if(absCv){let mb=0;for(const k of cv.children){const t=num(k,'top'),h=num(k,'height');if(t!==null&&h!==null&&!(t<=2&&h>=900+dy-1))mb=Math.max(mb,t+h);}
     const H=parseFloat(cv.style.height)||932;if(H<=932)cv.style.height=Math.max(DH,Math.min(H,mb))+'px';}
 }
-function refreshScreen(){const name=current.dataset.screen,old=current;const el=render(name);anchor(el);el._bg=old._bg;
+function refreshScreen(){const name=current.dataset.screen,old=current;const el=render(name);anchor(el);if(/^(fpins|fai)$/.test(name)&&typeof stickyFolder==='function')stickyFolder(el);el._bg=old._bg;
   device.insertBefore(el,old);(old._maps||[]).forEach(m=>{try{m.remove()}catch(e){}});old.remove();current=el;initMaps(el);}
 addEventListener('resize',fit);addEventListener('orientationchange',()=>setTimeout(fit,300));fit();setTimeout(fit,400);
 
