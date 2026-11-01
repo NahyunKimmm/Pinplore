@@ -736,14 +736,16 @@ function bookmarkDrag(tileEl,clientX,clientY){
   const close=(ms=0)=>setTimeout(()=>{row.style.transition='transform .32s cubic-bezier(.4,0,.8,.4)';row.style.transform='translateY(200px)';dim.style.opacity=0;
     setTimeout(()=>{ov.remove();},360);},ms);
   const up=()=>{removeEventListener('pointermove',move,true);removeEventListener('pointerup',up,true);removeEventListener('pointercancel',up,true);
-    root._held=true;setTimeout(()=>{root._held=false;},400);
+    root._held=true;root._noHint=Date.now();setTimeout(()=>{root._held=false;},400);
     done=true;cancelAnimationFrame(raf);
     if(hover<0){ghost.style.transition='transform .3s ease,opacity .3s ease';gx=tx;gy=ty;scale=.6;setGhost();ghost.style.opacity=0;close(120);return;}
     const f=folders[hover],r=f.getBoundingClientRect(),[l,t]=toLocal(r.left,r.top),[rr,b]=toLocal(r.right,r.bottom);
     ghost.style.transition='transform .34s cubic-bezier(.5,0,.75,0),opacity .34s ease';gx=(l+rr)/2;gy=(t+b)/2+6;rot=0;scale=.35;setGhost();ghost.style.opacity=0;
     const badge=document.createElementNS('http://www.w3.org/2000/svg','svg');badge.setAttribute('width',55);badge.setAttribute('height',55);
-    badge.style.cssText=`position:absolute;left:${(l+rr)/2+82-137/2}px;top:${t-50+12}px;width:55px;height:55px;transform:scale(0);transition:transform .35s cubic-bezier(.3,1.6,.5,1);filter:drop-shadow(0 4px 10px rgba(0,0,0,.18))`;
-    const use=document.createElementNS('http://www.w3.org/2000/svg','use');use.setAttribute('href','#v8qjit7');badge.appendChild(use);ov.appendChild(badge);
+    // the badge lives in the folder row, so it slides away together with the folders
+    const rowTop=parseFloat(row.style.top);
+    badge.style.cssText=`position:absolute;left:${(l+rr)/2+82-137/2}px;top:${t-50+12-rowTop}px;width:55px;height:55px;transform:scale(0);transition:transform .35s cubic-bezier(.3,1.6,.5,1);filter:drop-shadow(0 4px 10px rgba(0,0,0,.18));z-index:5`;
+    const use=document.createElementNS('http://www.w3.org/2000/svg','use');use.setAttribute('href','#v8qjit7');badge.appendChild(use);row.appendChild(badge);
     setTimeout(()=>{badge.style.transform='scale(1)';},300);
     setTimeout(()=>{use.setAttribute('href','#v1tk60tu');badge.style.transform='scale(1.12)';setTimeout(()=>badge.style.transform='scale(1)',160);},900);
     setTimeout(()=>toast(hover===4?'New folder created · photo saved':'Saved to '+BM_NAMES[hover]),950);
@@ -1226,7 +1228,7 @@ function show(name,anim='enter',push=true){
 function back(){if(stack.length>1){stack.pop();pinStack.pop();PIN=pinStack[pinStack.length-1];PINPHOTO=null;PINSTACK=null;show(stack[stack.length-1],'enter-back',false);}}
 function tab(name){stack=[];pinStack=[];show(name,'fade');}
 let tt;function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('on');clearTimeout(tt);tt=setTimeout(()=>t.classList.remove('on'),1600);}
-function flashHint(){device.classList.add('hint');setTimeout(()=>device.classList.remove('hint'),450);}
+function flashHint(){if(current&&(current.querySelector('.bmov')||(current._noHint&&Date.now()-current._noHint<2500)))return;device.classList.add('hint');setTimeout(()=>device.classList.remove('hint'),450);}
 
 function run(act){
   for(const a of act.split('|')){
