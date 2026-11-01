@@ -49,6 +49,8 @@ body.bare #device{border-radius:0;box-shadow:none}
 @keyframes fadeIn{from{opacity:0}to{opacity:1}}
 .fadeout{animation:fadeOut .28s ease forwards}
 .down{animation:down .32s cubic-bezier(.4,0,1,1) forwards}
+@keyframes stickPop{0%{transform:none}30%{transform:translateY(7px)}62%{transform:translateY(-2.5px)}82%{transform:translateY(1px)}100%{transform:none}}
+.stick-pop{animation:stickPop .46s cubic-bezier(.3,.7,.4,1)}
 @keyframes fadeOut{from{opacity:1}to{opacity:0}}
 @keyframes down{from{transform:none;opacity:1}to{transform:translateY(80px);opacity:0}}
 @keyframes up{from{transform:translateY(60px);opacity:0}to{transform:none;opacity:1}}
@@ -622,75 +624,66 @@ const CUSTOM={
 };
 for(const k of Object.keys(CUSTOM))SCREENS[k]={custom:1,h:932,bg:'background:#f5f5f5',sc:[],fx:[]};
 
-/* Folder (Pins / AI Itinerary) scroll: 1) the big title scrolls away and a compact title fades into the header,
-   2) tabs + map stick under the header, 3) scrolling further closes the map from the bottom, the list follows its edge. */
+/* Folder (Pins / AI Itinerary) scroll — native (compositor) sticky so nothing shakes on iPhone:
+   1) big title scrolls away, a compact title pops into the white header
+   2) tabs + map stick under the header with a short settle bounce
+   3) scrolling on, the list slides up over the stuck map, closing it from the bottom
+   Scroll snaps (proximity) to: expanded / stuck / map closed. */
 function stickyFolder(root){
-  const sc=root.querySelector(':scope>.sc');if(!sc)return;
+  const sc=root.querySelector(':scope>.sc');const cv=sc&&sc.firstElementChild;if(!cv)return;
   const all=[...root.querySelectorAll('div')];
   const map=all.find(d=>d._abs&&Math.round(d._abs[2])===434&&Math.round(d._abs[3])===285);
   const myLog=[...root.querySelectorAll('.t')].find(t=>txt(t)==='My Log');const tabs=myLog&&myLog.parentElement;
   const title=[...root.querySelectorAll('.t')].find(t=>txt(t)==='Sokcho Travel'&&t._abs&&t._abs[1]<300);
   const fx=root.querySelector(':scope>.fx');
   if(!map||!tabs||!fx)return;
-  const HB=146, TAB_Y=165;                       // header bottom, tab row position when stuck (Figma)
-  const S0=tabs._abs[1]-TAB_Y;                   // scroll offset where tabs + map stick
-  const MH=map._abs[3];
-  const panel=tabs.parentElement;
-  // white backing between header and map once stuck
-  const strip=document.createElement('div');
-  strip.style.cssText=`left:0;top:${HB+S0-panel._abs[1]}px;width:430px;height:${map._abs[1]-(HB+S0)}px;background:#fff;pointer-events:none`;
-  panel.insertBefore(strip,panel.firstChild);
-  for(const e of [strip,tabs,map]){e.style.willChange='transform';e.style.zIndex='6';}
-  strip.style.zIndex='5';
-  // header: white fill + compact title
+  const HB=146,TAB_Y=165;
+  const S0=tabs._abs[1]-TAB_Y, MH=map._abs[3];
+  const yT=HB+S0, yM=map._abs[1];
+  const panel=map.parentElement;
+  cv.style.overflow='clip';                       // 'hidden' would stop position:sticky from working
+  const box=(css)=>{const d=document.createElement('div');d.style.cssText=css;return d;};
+  const stT=box(`position:sticky;top:${HB}px;left:0;width:430px;height:0;z-index:8;pointer-events:none`);
+  const stM=box(`position:sticky;top:${yM-S0}px;left:0;width:430px;height:0;z-index:2`);
+  const strip=box(`left:0;top:0;width:430px;height:${yM-yT}px;background:#fff`);
+  const tabsIn=box(`left:0;top:0;width:430px;height:${yM-yT}px;pointer-events:auto`);
+  tabs.style.left=tabs._abs[0]+'px';tabs.style.top=(tabs._abs[1]-yT)+'px';
+  tabsIn.append(strip,tabs);stT.appendChild(tabsIn);
+  // tab tap areas travel with the stuck row
+  const tb=tabs._abs;
+  for(const hs of [...cv.querySelectorAll(':scope>.hs')]){const t=parseFloat(hs.style.top),hh=parseFloat(hs.style.height);
+    if(t>=tb[1]-12&&t+hh<=tb[1]+tb[3]+12){const d=box(`left:${hs.style.left};top:${t-yT}px;width:${hs.style.width};height:${hh}px;cursor:pointer;pointer-events:auto`);
+      d.dataset.act=hs.dataset.act;d.setAttribute('role','button');d.setAttribute('aria-label',hs.getAttribute('aria-label')||'');tabsIn.appendChild(d);hs.remove();}}
+  const mapIn=box(`left:0;top:0;width:430px;height:${MH}px`);
+  map.style.left=map._abs[0]+'px';map.style.top='0px';mapIn.appendChild(map);stM.appendChild(mapIn);
+  const flow=h=>box(`position:relative;height:${h}px;width:1px;pointer-events:none`);
+  cv.prepend(flow(yT),stT,flow(yM-yT),stM);
+  // list slides over the stuck map: white backing + list content above the map layer
+  const back=box(`left:0;top:${yM+MH-panel._abs[1]}px;width:430px;height:${Math.max(0,panel._abs[3]-(yM+MH-panel._abs[1]))}px;background:#fff;z-index:3`);
+  for(const k of [...panel.children])if(k!==map)k.style.zIndex='3';
+  panel.insertBefore(back,panel.firstChild);
+  // snap points (native, proximity)
+  sc.style.scrollSnapType='y proximity';
+  for(const y of [0,S0,S0+MH])cv.appendChild(box(`left:0;top:${y}px;width:1px;height:1px;scroll-snap-align:start;pointer-events:none`));
+  // header: white fill + compact title (state changes, so no per-frame movement)
   const head=fx.firstElementChild;
-  const white=document.createElement('div');white.style.cssText=`left:0;top:0;width:430px;height:${HB}px;background:#fff;opacity:0;pointer-events:none`;
+  const white=box(`left:0;top:0;width:430px;height:${HB}px;background:#fff;opacity:0;pointer-events:none;transition:opacity .2s ease`);
   fx.insertBefore(white,head);
   let mini=null;
   if(title){mini=document.createElement('div');mini.className='t';
-    mini.style.cssText=title.style.cssText+`;left:84px;top:${84+25-14}px;width:250px;height:28px;font-size:20px;line-height:28px;opacity:0;transform:translateY(8px);pointer-events:none;white-space:nowrap`;
+    mini.style.cssText=title.style.cssText+`;left:84px;top:${84+25-14}px;width:250px;height:28px;font-size:20px;line-height:28px;opacity:0;transform:translateY(12px) scale(.96);transform-origin:0 50%;pointer-events:none;white-space:nowrap;transition:opacity .22s ease,transform .5s cubic-bezier(.34,1.56,.64,1)`;
     mini.innerHTML=title.innerHTML;fx.appendChild(mini);}
-  const T0=title?title._abs[1]+title._abs[3]-HB:40; // big title fully under the header
-  const BOUNCE='cubic-bezier(.34,1.56,.64,1)';
-  white.style.transition='opacity .22s ease';
-  if(mini)mini.style.transition=`opacity .25s ease,transform .45s ${BOUNCE}`;
-  let titleOn=null;
-  // tabs + map follow their stick position through a spring: they overshoot a little past the line and settle back
-  let pos=0,vel=0,raf=0,last=0,touching=false,entering=false,prevTg=0;
-  const K=0.45,D=0.58;
-  const target=()=>Math.max(0,sc.scrollTop-S0);
-  function apply(){
+  const T0=title?title._abs[1]+title._abs[3]-HB:40;
+  let titleOn=null,stuck=null,closed=null;
+  const pop=(el,cls)=>{el.classList.remove(cls);void el.offsetWidth;el.classList.add(cls);};
+  function update(){
     const st=sc.scrollTop;
-    const on=st>T0; if(on!==titleOn){titleOn=on;white.style.opacity=on?1:Math.min(1,st/Math.max(1,T0));
-      if(mini){mini.style.opacity=on?1:0;mini.style.transform=on?'none':'translateY(10px)';}}
-    if(!on)white.style.opacity=Math.min(1,st/Math.max(1,T0));
-    const t=pos;
-    for(const e of [strip,tabs,map])e.style.transform=t>0.01?`translateY(${t.toFixed(2)}px)`:'';
-    const c=Math.min(MH,Math.max(0,target()));   // map closes in step with the list (no spring, stays glued to it)
-    map.style.clipPath=c?`inset(0 0 ${c}px 0)`:'';map.style.visibility=c>=MH?'hidden':'';
+    white.style.opacity=Math.min(1,Math.max(0,st/Math.max(1,T0)));
+    const on=st>T0;if(on!==titleOn){titleOn=on;if(mini){mini.style.opacity=on?1:0;mini.style.transform=on?'none':'translateY(12px) scale(.96)';}}
+    const s=st>=S0-1;if(s!==stuck){if(stuck!==null&&s){pop(tabsIn,'stick-pop');pop(mapIn,'stick-pop');}stuck=s;}
+    const c=st>=S0+MH-2;if(c!==closed){if(closed!==null&&c)pop(tabsIn,'stick-pop');closed=c;}
   }
-  function tick(now){
-    const tg=target();if(prevTg<=0&&tg>0)entering=true;prevTg=tg;
-    if(!entering){pos=tg;vel=0;apply();raf=0;last=0;return;}   // already stuck: stay glued
-    const steps=Math.min(4,Math.max(1,Math.round((now-(last||now-16.7))/16.7)));last=now;
-    // below the stick line the spring is released immediately (elements scroll with the content)
-    if(tg<=0&&pos<=0.5){pos=0;vel=0;entering=false;apply();raf=0;last=0;return;}
-    for(let i=0;i<steps;i++){vel=(vel+(tg-pos)*K)*D;pos+=vel;}
-    if(Math.abs(tg-pos)<0.15&&Math.abs(vel)<0.15){pos=tg;vel=0;entering=false;apply();raf=0;last=0;return;}
-    apply();raf=requestAnimationFrame(tick);
-  }
-  const kick=()=>{if(!raf)raf=requestAnimationFrame(tick);};
-  // magnetic snap when the scroll comes to rest between states
-  let idle=0,snapping=false;
-  function snap(){const st=sc.scrollTop;let to=null;
-    if(st>4&&st<S0-4)to=st<S0*0.45?0:S0;
-    else if(st>S0+4&&st<S0+MH-4)to=st-S0<MH*0.4?S0:S0+MH;
-    if(to===null)return;snapping=true;if(entering){entering=false;vel=0;}const from=st,t0=performance.now(),dur=420;
-    (function step(now){const k=Math.min(1,(now-t0)/dur),e=1-Math.pow(1-k,3);sc.scrollTop=from+(to-from)*e;if(k<1)requestAnimationFrame(step);else snapping=false;})(t0);}
-  sc.addEventListener('scroll',()=>{kick();apply();clearTimeout(idle);if(!snapping&&!touching)idle=setTimeout(snap,140);},{passive:true});
-  sc.addEventListener('touchstart',()=>{touching=true;clearTimeout(idle);},{passive:true});
-  const rel=()=>{touching=false;clearTimeout(idle);idle=setTimeout(snap,180);};sc.addEventListener('touchend',rel,{passive:true});sc.addEventListener('touchcancel',rel,{passive:true});
-  apply();
+  sc.addEventListener('scroll',update,{passive:true});update();
 }
 
 const TOG={"v17xz2et": "heart", "v1gos3jc": "bm", "vexzty2": "heart", "vb4eiif": "bm"};
