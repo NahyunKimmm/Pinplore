@@ -1004,9 +1004,24 @@ function mountMap(M,cfg,root){
   root._maps.push(map);
   let ok=false;const fail=setTimeout(()=>{if(!ok){try{map.remove()}catch(e){}box.remove();}},9000);
   map.on('load',()=>{ok=true;clearTimeout(fail);
-    for(const L of map.getStyle().layers){
-      if(L.type==='background')map.setPaintProperty(L.id,'background-color','#f3f3f1');
-      if(/water/.test(L.id)&&L.type==='fill')map.setPaintProperty(L.id,'fill-color','#c8d0d4');
+    // restyle Positron to the Figma map: light gray land, white roads, gray buildings, small gray English labels, no shields/POIs
+    const sp=(id,k,v)=>{try{map.setPaintProperty(id,k,v)}catch(e){}},sl=(id,k,v)=>{try{map.setLayoutProperty(id,k,v)}catch(e){}};
+    for(const L of map.getStyle().layers){const id=L.id;
+      if(L.type==='background')sp(id,'background-color','#f4f4f2');
+      else if(L.type==='fill'){
+        if(/water/.test(id))sp(id,'fill-color','#c8d0d4');
+        else if(/building/.test(id)){sp(id,'fill-color','#e3e3e1');sp(id,'fill-outline-color','#dadad8');}
+        else sp(id,'fill-color','#efefed');}
+      else if(L.type==='line'){
+        if(/water|river|stream|canal/.test(id))sp(id,'line-color','#c8d0d4');
+        else if(/boundary|admin/.test(id))sl(id,'visibility','none');
+        else if(/casing/.test(id))sp(id,'line-color','#e8e8e6');
+        else if(/road|highway|street|path|bridge|tunnel|minor|major|motorway|trunk|primary|secondary|tertiary|service|rail/.test(id))sp(id,'line-color',/rail/.test(id)?'#e6e6e4':'#ffffff');}
+      else if(L.type==='symbol'){
+        if(/shield|poi|transit|airport|housenum|oneway|highway_name_motorway|aerodrome/.test(id)){sl(id,'visibility','none');continue;}
+        sl(id,'text-field',['coalesce',['get','name:en'],['get','name_en'],['get','name:latin'],['get','name']]);
+        sp(id,'text-color','#9a9a9a');sp(id,'text-halo-color','rgba(244,244,242,.9)');sp(id,'text-halo-width',1.2);
+        if(/place|city|town|village|country|state/.test(id)){sl(id,'text-transform','uppercase');sl(id,'text-letter-spacing',0.12);sl(id,'text-size',10);}}
     }
     M.style.backgroundImage='none';
     // the Figma route group carries a drop shadow meant for the drawn line; with a live map it would show as an empty box
@@ -1019,7 +1034,7 @@ function mountMap(M,cfg,root){
       const n=parseInt((p.textContent||'').trim());if(!isNaN(n))pts.push([n,[ll.lng,ll.lat]]);}
     if(routes.length&&pts.length>=2){routes.forEach(r=>r.remove());pts.sort((a,b)=>a[0]-b[0]);
       map.addSource('route',{type:'geojson',data:{type:'Feature',geometry:{type:'LineString',coordinates:pts.map(p=>p[1])}}});
-      map.addLayer({id:'route-shadow',type:'line',source:'route',paint:{'line-color':'rgba(0,0,0,.15)','line-width':10,'line-blur':12},layout:{'line-cap':'round','line-join':'round'}});
+      map.addLayer({id:'route-shadow',type:'line',source:'route',paint:{'line-color':'rgba(0,0,0,.07)','line-width':16,'line-blur':15},layout:{'line-cap':'round','line-join':'round'}});
       map.addLayer({id:'route',type:'line',source:'route',paint:{'line-color':'#ffffff','line-width':4},layout:{'line-cap':'round','line-join':'round'}});}
   });
   map.on('error',()=>{});
