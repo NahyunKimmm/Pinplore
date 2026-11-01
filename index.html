@@ -18,8 +18,8 @@ html,body{height:100%}
 body{margin:0;background:var(--stage);display:flex;align-items:center;justify-content:center;overflow:hidden;
   padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0}
 #holder{position:relative;flex:none}
-#device{position:absolute;left:0;top:0;width:430px;height:932px;transform-origin:0 0;border-radius:52px;overflow:hidden;background:#fff;
-  box-shadow:0 0 0 11px var(--bezel),0 30px 90px rgba(0,0,0,.35);isolation:isolate}
+#device{position:absolute;left:0;top:0;width:430px;height:932px;transform-origin:0 0;border-radius:0;overflow:hidden;background:#fff;
+  box-shadow:0 30px 90px rgba(0,0,0,.25);isolation:isolate}
 body.bare #device{border-radius:0;box-shadow:none}
 .scr{position:absolute;inset:0;overflow:hidden;isolation:isolate;font-family:Manrope,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
 .scr div,.scr svg{position:absolute;box-sizing:border-box}
