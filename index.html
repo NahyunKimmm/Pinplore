@@ -629,8 +629,13 @@ let SCALE=1,DH=932;const ZOOM_OK=typeof CSS!=='undefined'&&CSS.supports&&CSS.sup
 /* Phones: fill the screen width and use the real screen height (DH). Screens are drawn in 430x932 space;
    anchor() then pins bottom bars / sheets to the real bottom edge, and the middle scrolls if it does not fit. */
 function fit(){
-  const vw=window.innerWidth, vh=window.innerHeight, bare=vw<520;
+  const vw=window.innerWidth, bare=vw<520;
+  // installed (home-screen) mode on iPhone reports a height without the home-indicator strip: use the whole screen
+  const standalone=navigator.standalone===true||(window.matchMedia&&(matchMedia('(display-mode: fullscreen)').matches||matchMedia('(display-mode: standalone)').matches));
+  let vh=Math.max(window.innerHeight,document.documentElement.clientHeight||0);
+  if(bare&&standalone&&screen&&screen.height>vh&&screen.width<=vw+2)vh=screen.height;
   document.body.classList.toggle('bare',bare);
+  if(bare){document.documentElement.style.height=document.body.style.height=vh+'px';}
   let s,dh=932;
   if(bare){s=vw/430;dh=Math.round(Math.max(560,Math.min(1200,vh/s)));}
   else s=Math.min((vw-32)/430,(vh-56)/932,1.15);
@@ -672,7 +677,7 @@ function anchor(root){
 }
 function refreshScreen(){const name=current.dataset.screen,old=current;const el=render(name);anchor(el);el._bg=old._bg;
   device.insertBefore(el,old);(old._maps||[]).forEach(m=>{try{m.remove()}catch(e){}});old.remove();current=el;initMaps(el);}
-addEventListener('resize',fit);fit();
+addEventListener('resize',fit);addEventListener('orientationchange',()=>setTimeout(fit,300));fit();setTimeout(fit,400);
 
 let REG=[];
 /* ---------- Apple-style Liquid Glass, one recipe for every glass surface ----------
