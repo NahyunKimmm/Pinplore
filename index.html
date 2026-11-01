@@ -689,6 +689,69 @@ function stickyFolder(root){
     else if(state>0&&st<T-2)go(state-1);},{passive:true});
 }
 
+/* Blind view: press and hold a photo → folders slide up, drag the photo into a folder (Figma: 북마크 flow).
+   Hovered folder pops up (×1.26) while the others fade to 40%; near the screen edges the folder row scrolls. */
+const BM_NAMES=['Daecheongro, Busan','Sokcho Travel','NewYork, US','Daejeon City Tour','Create New'];
+function bookmarkDrag(tileEl,clientX,clientY){
+  const root=current;if(!root||root.querySelector('.bmov'))return;
+  const H=DH,dy=H-932;
+  const ov=document.createElement('div');ov.className='bmov';ov.style.cssText=`left:0;top:0;width:430px;height:${H}px;z-index:90`;
+  const dim=document.createElement('div');dim.style.cssText=`left:0;top:0;width:430px;height:${H}px;background:rgba(0,0,0,.3);backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px);opacity:0;transition:opacity .25s ease`;
+  ov.appendChild(dim);
+  // folder row (Figma bm1 strip), horizontally scrollable by dragging to the edges
+  const strip=SCREENS.bm1.sc[4];
+  const row=document.createElement('div');row.style.cssText=`left:0;top:${740+dy}px;width:430px;height:170px;overflow:visible;transform:translateY(190px);transition:transform .42s cubic-bezier(.2,.9,.25,1.12)`;
+  const track=document.createElement('div');track.style.cssText='left:0;top:0;width:640px;height:170px';
+  const keep=REG;REG=[];node([18,49,strip[2],strip[3],'',strip[5]],track);REG=keep;
+  const folders=[...track.firstElementChild.children];
+  folders.forEach(f=>{f.style.transition='transform .28s cubic-bezier(.3,1.5,.5,1),opacity .2s ease';f.style.transformOrigin='50% 100%';});
+  row.appendChild(track);ov.appendChild(row);
+  // the photo being dragged
+  const bg=(tileEl.style.backgroundImage||tileEl.style.background||'').match(/url\([^)]*\)/);
+  const ghost=document.createElement('div');
+  ghost.style.cssText=`left:0;top:0;width:68px;height:86px;border-radius:6px;background:${bg?bg[0]:'#ccc'} center/cover no-repeat;box-shadow:0 0 0 2px #fff,0 10px 24px rgba(0,0,0,.35);transform-origin:50% 50%;will-change:transform;transition:opacity .2s`;
+  ov.appendChild(ghost);
+  root.appendChild(ov);
+  const toLocal=(x,y)=>{const r=holder.getBoundingClientRect();return [(x-r.left)/SCALE,(y-r.top)/SCALE];};
+  let [px,py]=toLocal(clientX,clientY);
+  const tr=tileEl.getBoundingClientRect(),[tx,ty]=toLocal(tr.left+tr.width/2,tr.top+tr.height/2);
+  let gx=tx,gy=ty,rot=0,scale=1.6;
+  const setGhost=()=>{ghost.style.transform=`translate(${gx-34}px,${gy-43}px) rotate(${rot}deg) scale(${scale})`;};
+  setGhost();
+  requestAnimationFrame(()=>{dim.style.opacity=1;row.style.transform='none';});
+  // ghost eases toward the finger
+  let sx=0,hover=-1,done=false,raf=0;
+  const maxS=Math.max(0,18+strip[2]+18-430);
+  function tick(){
+    gx+=(px-gx)*.35;gy+=(py-60-gy)*.35;rot+=(-5.2-rot)*.2;scale+=(1-scale)*.2;setGhost();
+    if(py>H-230){if(px<46)sx=Math.max(0,sx-7);else if(px>384)sx=Math.min(maxS,sx+7);}
+    track.style.transform=`translateX(${-sx}px)`;
+    let h=-1;folders.forEach((f,i)=>{const r=f.getBoundingClientRect(),[l,t]=toLocal(r.left,r.top),[rr,b]=toLocal(r.right,r.bottom);
+      if(px>=l-6&&px<=rr+6&&py-30>=t-70&&py-30<=b+20)h=i;});
+    if(h!==hover){hover=h;folders.forEach((f,i)=>{f.style.transform=i===h?'translateY(-6px) scale(1.26)':'none';f.style.opacity=h<0||i===h?1:.4;f.style.zIndex=i===h?2:'';});}
+    if(!done)raf=requestAnimationFrame(tick);
+  }
+  raf=requestAnimationFrame(tick);
+  const move=e=>{[px,py]=toLocal(e.clientX,e.clientY);e.preventDefault&&e.preventDefault();};
+  const close=(ms=0)=>setTimeout(()=>{row.style.transition='transform .32s cubic-bezier(.4,0,.8,.4)';row.style.transform='translateY(200px)';dim.style.opacity=0;
+    setTimeout(()=>{ov.remove();},360);},ms);
+  const up=()=>{removeEventListener('pointermove',move,true);removeEventListener('pointerup',up,true);removeEventListener('pointercancel',up,true);
+    root._held=true;setTimeout(()=>{root._held=false;},400);
+    done=true;cancelAnimationFrame(raf);
+    if(hover<0){ghost.style.transition='transform .3s ease,opacity .3s ease';gx=tx;gy=ty;scale=.6;setGhost();ghost.style.opacity=0;close(120);return;}
+    const f=folders[hover],r=f.getBoundingClientRect(),[l,t]=toLocal(r.left,r.top),[rr,b]=toLocal(r.right,r.bottom);
+    ghost.style.transition='transform .34s cubic-bezier(.5,0,.75,0),opacity .34s ease';gx=(l+rr)/2;gy=(t+b)/2+6;rot=0;scale=.35;setGhost();ghost.style.opacity=0;
+    const badge=document.createElementNS('http://www.w3.org/2000/svg','svg');badge.setAttribute('width',55);badge.setAttribute('height',55);
+    badge.style.cssText=`position:absolute;left:${(l+rr)/2+82-137/2}px;top:${t-50+12}px;width:55px;height:55px;transform:scale(0);transition:transform .35s cubic-bezier(.3,1.6,.5,1);filter:drop-shadow(0 4px 10px rgba(0,0,0,.18))`;
+    const use=document.createElementNS('http://www.w3.org/2000/svg','use');use.setAttribute('href','#v8qjit7');badge.appendChild(use);ov.appendChild(badge);
+    setTimeout(()=>{badge.style.transform='scale(1)';},300);
+    setTimeout(()=>{use.setAttribute('href','#v1tk60tu');badge.style.transform='scale(1.12)';setTimeout(()=>badge.style.transform='scale(1)',160);},900);
+    setTimeout(()=>toast(hover===4?'New folder created · photo saved':'Saved to '+BM_NAMES[hover]),950);
+    close(1700);
+  };
+  addEventListener('pointermove',move,true);addEventListener('pointerup',up,true);addEventListener('pointercancel',up,true);
+}
+
 const TOG={"v17xz2et": "heart", "v1gos3jc": "bm", "vexzty2": "heart", "vb4eiif": "bm"};
 const NS='http://www.w3.org/2000/svg';
 const device=document.getElementById('device'), holder=document.getElementById('holder');
@@ -882,7 +945,7 @@ function buildPan(n,cv,name){
   function glide(){vx*=0.95;vy*=0.95;ox+=vx;oy+=vy;place();if(Math.abs(vx)+Math.abs(vy)>0.2)raf=requestAnimationFrame(glide);else raf=0;}
   wrap.addEventListener('pointerdown',e=>{const wasGliding=!!raf;stop();down=true;moved=wasGliding;sx=lx=e.clientX;sy=ly=e.clientY;lt=performance.now();vx=vy=0;
     tileEl=e.target.closest('[data-tile]');clearTimeout(lp);
-    if(tileEl&&tileEl.dataset.tile==='photo'&&!moved)lp=setTimeout(()=>{if(!moved){down=false;PIN=tileEl.dataset.pin;run('go:bm1');}},520);
+    if(tileEl&&tileEl.dataset.tile==='photo'&&!moved)lp=setTimeout(()=>{if(!moved){down=false;PIN=tileEl.dataset.pin;if(typeof bookmarkDrag==='function')bookmarkDrag(tileEl,lx,ly);else run('go:bm1');}},480);
     try{wrap.setPointerCapture(e.pointerId);}catch(_){}});
   wrap.addEventListener('pointermove',e=>{if(!down)return;const s=SCALE||1;
     if(Math.abs(e.clientX-sx)+Math.abs(e.clientY-sy)>6){moved=true;clearTimeout(lp);}
