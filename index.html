@@ -718,7 +718,10 @@ function bookmarkDrag(tileEl,clientX,clientY){
   let gx=tx,gy=ty,rot=0,scale=1.6;
   const setGhost=()=>{ghost.style.transform=`translate(${gx-34}px,${gy-43}px) rotate(${rot}deg) scale(${scale})`;};
   setGhost();
-  requestAnimationFrame(()=>{dim.style.opacity=1;row.style.transform='none';});
+  // bottom navigation slides out while the folders are up, and comes back after they leave
+  const navs=[...root.querySelectorAll('div')].filter(d=>!d.closest('.bmov')&&d.style.width==='430px'&&parseFloat(d.style.height)>=88&&parseFloat(d.style.height)<=100&&parseFloat(d.style.top)>=H-115);
+  navs.forEach(n=>{n.style.transition='transform .32s cubic-bezier(.4,0,.6,1)';});
+  requestAnimationFrame(()=>{dim.style.opacity=1;row.style.transform='none';navs.forEach(n=>n.style.transform='translateY(130px)');});
   // ghost eases toward the finger
   let sx=0,hover=-1,done=false,raf=0;
   const maxS=Math.max(0,18+strip[2]+18-430);
@@ -734,6 +737,7 @@ function bookmarkDrag(tileEl,clientX,clientY){
   raf=requestAnimationFrame(tick);
   const move=e=>{[px,py]=toLocal(e.clientX,e.clientY);e.preventDefault&&e.preventDefault();};
   const close=(ms=0)=>setTimeout(()=>{row.style.transition='transform .32s cubic-bezier(.4,0,.8,.4)';row.style.transform='translateY(200px)';dim.style.opacity=0;
+    setTimeout(()=>navs.forEach(n=>{n.style.transition='transform .45s cubic-bezier(.2,.9,.25,1.08)';n.style.transform='';}),260);
     setTimeout(()=>{ov.remove();},360);},ms);
   const up=()=>{removeEventListener('pointermove',move,true);removeEventListener('pointerup',up,true);removeEventListener('pointercancel',up,true);
     root._held=true;root._noHint=Date.now();setTimeout(()=>{root._held=false;},400);
