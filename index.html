@@ -434,7 +434,8 @@ function openAskAI(opt={}){
       msgs.scrollTop=1e5;},900);};
   const LIST=card?AI_STOP:AI_GENERAL;
   const ask=q=>{chips.style.display='none';
-    if(ov._lift){const [lf,ly,lh]=ov._lift;const nt=Math.max(150,Math.min(ly,400-lh));lf.style.top=nt+'px';msgs.style.top=(nt+lh+16)+'px';}bubble('me',q);const r=LIST.find(x=>x[0]===q);
+    if(ov._lift){const [lf,ly,lh]=ov._lift;const nt=Math.max(150,Math.min(ly,400-lh));lf.style.top=nt+'px';msgs.style.top=(nt+lh+16)+'px';}bubble('me',q);const kw=t=>t.toLowerCase().replace(/[^a-zé\s-]/g,'').split(/[\s-]+/).filter(w=>w.length>3);const ql=q.toLowerCase();
+    const r=LIST.find(x=>x[0]===q)||LIST.find(x=>kw(x[0]).some(w=>ql.includes(w)||(w==='café'&&ql.includes('cafe'))));
     if(r)aiSay(r[1],r[2],card&&r[0].startsWith('Swap'));else aiSay('I checked opening hours and walking time — Day 1 still ends by 18:30. Want me to add a dinner spot near the harbor?',[8]);};
   for(const [q] of LIST)chips.appendChild(h('div',{cls:'achip',onclick:ev=>{ev.stopPropagation();ask(q);}},q));
   send.addEventListener('click',()=>{const v=input.value.trim();input.value='';ask(v||LIST[0][0]);});
@@ -997,6 +998,9 @@ function mountMap(M,cfg,root){
       if(small.length>=2){pins.push(...small);[...o.children].filter(k=>!small.includes(k)&&k.tagName==='svg').forEach(k=>routes.push(k));}}
   }
   for(const o of overlays)if(!pins.includes(o))o.style.pointerEvents='none';
+  // Figma drop shadow on a group follows its content (route line + pins), not its bounding box
+  for(const o of overlays)if(!pins.includes(o)&&o.style.boxShadow&&!o.style.background){const m=o.style.boxShadow.match(/(rgba?\([^)]*\))\s+([-\d.]+)px\s+([-\d.]+)px\s+([\d.]+)px/)||o.style.boxShadow.match(/([-\d.]+)px\s+([-\d.]+)px\s+([\d.]+)px[^,]*?(rgba?\([^)]*\))/);
+    if(m){const c=m[1].startsWith('rgb')?m[1]:m[4],x=m[1].startsWith('rgb')?m[2]:m[1],y=m[1].startsWith('rgb')?m[3]:m[2],b=m[1].startsWith('rgb')?m[4]:m[3];o.style.boxShadow='none';o.style.filter=`drop-shadow(${x}px ${y}px ${b}px ${c})`;}}
   const box=document.createElement('div');box.className='mapc';M.insertBefore(box,M.firstChild);
   const map=new maplibregl.Map({container:box,style:'https://tiles.openfreemap.org/styles/positron',center:cfg.c,zoom:cfg.z,
     attributionControl:{compact:true},dragRotate:false,pitchWithRotate:false,touchPitch:false,fadeDuration:0});
