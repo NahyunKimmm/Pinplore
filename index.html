@@ -984,11 +984,27 @@ function buildPan(n,cv,name){
   function photo(g,x,y,w,h,img,rot,pin){const d=document.createElement('div');
     d.style.cssText=`left:${x}px;top:${y}px;width:${w}px;height:${h}px;border-radius:6.9px;overflow:hidden;background:${IMGX(img)} center/cover no-repeat,#fff;box-shadow:0 6px 24px rgba(0,0,0,.12)`+(rot?`;transform-origin:0 0;transform:rotate(${rot}deg)`:'');
     d.dataset.tile='photo';d.dataset.pin=pin;g.appendChild(d);}
-  function makeGroup(i,j){const n=hashc(i,j)%GROUPS.length,G=GROUPS[n],k=n%PINS.length,song=SONGS[(n*3+1)%SONGS.length];
+  // the canvas region a group stands for: board point q <-> canvas world point GK*(q-C)+C-K (K is invariant under pan/zoom)
+  const K0=[PANPOS.x-GK*PANPOS.bx,PANPOS.y-GK*PANPOS.by];
+  const tileHash=t=>((t[4].match(/img\/([0-9a-f]{10})/)||[])[1]);
+  const memoText=t=>{const tx=JSON.stringify(t[5]);if(/url\(/.test(tx)){const m=tx.match(/"T","([^"]*)"/);return m?m[1].replace(/<[^>]+>/g,''):'';}return PINS[pinIdx(t._pin)][3];};
+  function regionTiles(wx,wy){const out=[];const cy=CY();
+    for(const c of base){const [,,cw,ch,,tiles]=c.n;const Pc=ch+GAP;
+      for(let dn=-2;dn<=2;dn++){const n=Math.round((wx-c.bx-cw/2)/P)+dn,X=c.bx+n*P;
+        for(let dm=-1;dm<=1;dm++){const m=Math.round((wy-c.by-ch/2)/Pc)+dm;
+          for(const tl of tiles){const tx=X+tl[0]+tl[2]/2,ty=c.by+m*Pc+tl[1]+tl[3]/2;out.push({t:tl,d:Math.hypot(tx-wx,(ty-wy)*.8)});}}}}
+    return out.sort((a,b)=>a.d-b.d);}
+  function makeGroup(i,j){const sx=(j&1)*GPX/2,qx=i*GPX+sx+209.4,qy=j*GPY+486,cy=CY();
+    const wx=GK*(qx-CX)+CX-K0[0],wy=GK*(qy-cy)+cy-K0[1];
+    const R=regionTiles(wx,wy),phs=R.filter(r=>!r.t[5].length&&tileHash(r.t)),mem=R.filter(r=>r.t[5].length);
+    const mus=mem.filter(r=>/url\(/.test(JSON.stringify(r.t[5]))),txt=mem.filter(r=>!/url\(/.test(JSON.stringify(r.t[5])));
+    const p1=phs[0],p2=phs.find(r=>tileHash(r.t)!==tileHash(p1.t))||phs[1],m1=txt[0],m2=txt.find(r=>memoText(r.t)!==memoText(m1.t))||txt[1],mu=mus[0];
     const g=document.createElement('div');g.style.cssText='left:0;top:0;width:0;height:0;will-change:transform';
     const flip=(i+j)&1,keep=REG;REG=[];
-    photo(g,132,346,171,234,G[0],0,k);photo(g,flip?50:268,flip?440:429,114,156,G[1],flip?-12:15,k);
-    memo(MH,35+(flip?150:0),369,G[2],1,g,k);memo(MM,58+(flip?120:0),502,song,1,g,k);memo(MI,189-(flip?150:0),679,G[3],2,g,k);
+    photo(g,132,346,171,234,tileHash(p1.t),0,p1.t._pin);photo(g,flip?50:268,flip?440:429,114,156,tileHash(p2.t),flip?-12:15,p2.t._pin);
+    if(m1)memo(MH,35+(flip?150:0),369,memoText(m1.t),1,g,m1.t._pin);
+    if(mu)memo(MM,58+(flip?120:0),502,memoText(mu.t),1,g,mu.t._pin);
+    if(m2)memo(MI,189-(flip?150:0),679,memoText(m2.t),2,g,m2.t._pin);
     REG=keep;bl.appendChild(g);return g;}
   function renderBoard(g){const cy=CY();
     bl.style.transform=`translate(${(CX*(1-g)).toFixed(2)}px,${(cy*(1-g)).toFixed(2)}px) scale(${g.toFixed(4)})`;
@@ -1018,7 +1034,7 @@ function buildPan(n,cv,name){
   // drag + inertia, tap / long-press
   let sx,sy,lx,ly,lt,vx=0,vy=0,moved=false,down=false,lp=null,tileEl=null,raf=0;
   const stop=()=>{cancelAnimationFrame(raf);raf=0;};
-  function panBy(dx,dy){ox+=dx/Math.max(zs,ZT0);oy+=dy/Math.max(zs,ZT0);bx+=dx/(GK*zs);by+=dy/(GK*zs);}
+  function panBy(dx,dy){ox+=dx/zs;oy+=dy/zs;bx+=dx/(GK*zs);by+=dy/(GK*zs);}
   function glide(){vx*=0.95;vy*=0.95;panBy(vx,vy);place();if(Math.abs(vx)+Math.abs(vy)>0.2)raf=requestAnimationFrame(glide);else raf=0;}
   wrap.addEventListener('pointerdown',e=>{if(pinch||pts.size>1){clearTimeout(lp);return;}const wasGliding=!!raf;stop();down=true;moved=wasGliding;sx=lx=e.clientX;sy=ly=e.clientY;lt=performance.now();vx=vy=0;
     tileEl=e.target.closest('[data-tile]');clearTimeout(lp);
@@ -1038,7 +1054,7 @@ function buildPan(n,cv,name){
     if(e.ctrlKey){const [mx,my]=devPt(e);zoomAt(Math.max(PAN_MIN*.85,Math.min(1.08,zs*Math.exp(-e.deltaY*.008))),mx,my);clearTimeout(wrap._zt);wrap._zt=setTimeout(settleZoom,180);}
     else{panBy(-e.deltaX,-e.deltaY);place();}},{passive:false});
   // pinch to zoom out (and back in up to the default size); the point between the fingers stays put
-  function zoomAt(s,mx,my){const cy=CY(),sb0=Math.max(zs,ZT0),sb1=Math.max(s,ZT0),g0=GK*zs,g1=GK*s;
+  function zoomAt(s,mx,my){const cy=CY(),sb0=zs,sb1=s,g0=GK*zs,g1=GK*s;
     const wx=CX+(mx-CX)/sb0-ox,wy=cy+(my-cy)/sb0-oy,qx=CX+(mx-CX)/g0-bx,qy=cy+(my-cy)/g0-by;
     zs=s;ox=CX+(mx-CX)/sb1-wx;oy=cy+(my-cy)/sb1-wy;bx=CX+(mx-CX)/g1-qx;by=cy+(my-cy)/g1-qy;place();}
   let zanim=0;
