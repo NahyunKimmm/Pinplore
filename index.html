@@ -124,34 +124,55 @@ const HOT={
 /* ---------- Mock data: every card / pin detail gets its own content ---------- */
 const PEOPLE=[['Julian Reyes','aaca86042c'],['Elena Vance','8eeb70e7ab'],['Marcus Thorne','030e46b0c3'],['Mina Park','36f3775476'],['Daniel Okafor','47007ecc8a'],
   ['Ingrid Holm','5744509766'],['Amara Cole','62b8752202'],['Jae Lim','ecd341f6ca'],['Naomi Adeyemi','f2272abfbe']];
-const SONGS=['Tokyo flash - Vaundy','Midnight Glow - Arlo','Harbor Lights - Seaside Tapes','Paper Moon - Lumi','Slow Tide - Nara','Neon Rain - Kite Club','Morning Hanok - Dawn Set','Wild Peony - Mareen'];
+const SONGS=['Tokyo flash - Vaundy','Midnight Glow - Arlo','Harbor Lights - Seaside Tapes','Paper Moon - Lumi','Slow Tide - Nara','Neon Rain - Kite Club','Morning Hanok - Dawn Set','Wild Peony - Mareen',
+  'Salt & Sun - The Ferries','Last Train Home - Moonbus','Polaroid Summer - Yuki K','Concrete Bloom - Halo Club','Window Seat - Pilot Kids','Afterglow - Sora',
+  'Sunday Market - Lemon Tea','Low Tide - Coastline','Paper Lanterns - Haneul','City Pop 87 - Mirai','Blue Hour - Seoul Lo-fi','Gull Song - Northbay'];
 const COMMENTS=['I was literally just there! This song fits perfectly here.','Adding this to my route for tomorrow. Great find!','The light in the second photo is unreal.','Is it crowded on weekends? Planning to go Saturday.',
   'Saved it to my Busan folder already.','We tried the café you mentioned — the pastries were gone by 3pm!','This spot is so underrated.','Went at sunrise because of this pin. Worth it.',
-  'Love the playlist pairing every time.','How long is the walk from the station?','The view from the top was even better than the photos.','Bookmarking for my next trip with friends.'];
+  'Love the playlist pairing every time.','How long is the walk from the station?','The view from the top was even better than the photos.','Bookmarking for my next trip with friends.',
+  'Followed your pin and ran into a street parade 😮','Tip: the side entrance has no queue.','My mom asked where I took these. Sent her your pin.','Rained the whole day and it was still gorgeous.',
+  'The owner remembered us the second time!','10/10 would get lost here again.','I sat there for two hours and forgot to take photos.','Is it stroller friendly?',
+  'Went back at night — totally different vibe.','Your notes are better than any guidebook.','Found the cat. The cat did not care about me.','The walk up is steep but the bench at the top makes up for it.',
+  'Parking is tight, take the bus from the terminal.','Bring cash, the stall doesn’t take cards.','This is now my phone wallpaper.','Tried the song with the view. Chills.'];
 const AGO=['2m ago','15m ago','42m ago','1h ago','3h ago','5h ago','1d ago','2d ago'];
-// [loc chip, city, address, title, body, author, song, [lng,lat], photos, likes, comments, walk min]
+// [loc chip, city, address, title, body, author, song, [lng,lat], photos, likes, comments, walk min, notes(short memo lines)]
 const PINS=[
- ['Korea, Sokcho','Sokcho','11, Yeonggeumjeong-ro 2-gil, 24825','The sunset over the lake was breathtaking','It painted the sky in hues of orange and pink. Found a cozy café nearby with the best pastries. The aroma of fresh coffee fills the air, making it a perfect spot to relax.',0,0,[128.6003,38.2118],['4ed3044cd8','fd463b4ad8','d95518be30','64f058d73d','15ed751e49'],24,2,5],
- ['Korea, Busan','Busan','219, Gwanganhaebyeon-ro, Suyeong-gu','Gwangan Bridge lit up the whole bay','Stayed on the sand until the drone show started. The bridge changes colour every few minutes and the waves look like they are glowing. Grab fried chicken from the alley behind the beach.',3,2,[129.1186,35.1532],['f0e95ca852','77affa408d','b4b1b4edf7','7e0dcbb6ee','2b2b99f6e8'],318,27,8],
- ['Korea, Daegu','Daegu','6-11, Dalgubeol-daero 450-gil, Jung-gu','Murals and street music all afternoon','A narrow lane full of murals and a busker playing old folk songs. Every corner has a new painting, and the tiny record shop at the end lets you listen before you buy.',4,5,[128.6061,35.8604],['0c8819c4f1','a703923011','c7df7c8215','98885f2348','1688c4fc5a'],142,9,3],
- ['Korea, Gangneung','Gangneung','17, Changhae-ro 14beon-gil','Coffee with the sound of waves','Anmok coffee street is lined with roasteries facing the sea. I took my latte down to the beach and watched the tide roll in. Go early on weekdays for a window seat.',1,4,[128.9469,37.7726],['aeb463fdd7','c65d4c3169','9803fbb22f','bd9920c026','a5a2d6e0cf'],87,6,6],
- ['Korea, Jeonju','Jeonju','99, Girin-daero, Wansan-gu','Lanterns over the hanok rooftops','Walked the hanok village after dark when the lanterns came on. The rooftops curve like waves and every courtyard smells like grilled rice cakes. Rent a hanbok for the full mood.',6,6,[127.1530,35.8150],['1a2ccdd155','545a1c9ce2','d7ee0d3ada','20a469d0ce','4e65203b4f'],205,14,4],
- ['Korea, Gyeongju','Gyeongju','9, Gyerim-ro, Hwangnam-dong','Green hills that are actually royal tombs','The burial mounds look like soft green waves in the middle of town. Cherry trees line the path in spring and the evening light turns everything gold. Bring a picnic blanket.',5,1,[129.2117,35.8384],['2660c9318e','487bfbd009','b4c2f250c6','94041cdcb7','7b900c4b81'],176,11,7],
- ['Korea, Seoul','Seoul','14, Yeonmujang-gil, Seongdong-gu','Old factories turned into cafés','Seongsu still has the brick walls of its shoe factories, now filled with galleries and pop-up stores. Found a tiny bakery selling salt bread that sells out by noon.',7,5,[127.0557,37.5446],['3fd1cca8e7','9f1b6664c4','31d41020e1','0b6838ebef','33100e65ef'],264,19,2],
- ['Korea, Jeju','Jeju','284-12, Ilchul-ro, Seongsan-eup','Sunrise from the crater rim','A 25-minute climb in the dark, then the whole sky cracked open in orange. The crater is greener than I expected and the wind is strong, so bring a jacket.',8,3,[126.9426,33.4581],['91aa61cb37','70b348d199','e920d4469d','cdc89c0bcd','d0deb24a76'],402,33,12],
- ['Korea, Sokcho','Sokcho','Jangsa-dong, Sokcho-si','A quiet harbor with a clear beach','Fishing boats come in around noon and the beach beside the port is almost empty. Spread out a mat, lie down and listen to the gulls. The squid sundae stall is a must.',2,4,[128.5703,38.2335],['d16aa1ec82','7f832f70a5','64f058d73d','202ccf3fd9','d95518be30'],58,4,5],
- ['Korea, Taean','Taean','Seunon-ri, Anmyeon-eup','Two rocks and a low-tide path','At low tide you can walk almost all the way to the Grandfather and Grandmother rocks. Sunset here is famous for a reason — the sea turns completely pink.',4,2,[126.3325,36.4987],['b4b1b4edf7','c65d4c3169','609a15ebe4','e0bbd62a5f','aeb463fdd7'],131,8,9],
- ['Korea, Daejeon','Daejeon','169, Dunsan-daero, Seo-gu','A forest walk in the middle of the city','Hanbat Arboretum is huge and the paths are shaded the whole way. The rose garden was in full bloom and there are benches every few minutes. Great after a museum visit.',3,7,[127.3895,36.3667],['a16b611bcb','dfd38b8050','94041cdcb7','25e9f39459','2660c9318e'],49,3,6],
- ['Korea, Busan','Busan','203, Gamnae 2-ro, Saha-gu','Pastel houses stacked up the hill','Gamcheon village looks like a box of crayons from the top. Follow the fish signs to find hidden viewpoints and tiny studios. The Little Prince statue has a queue, but it moves fast.',7,6,[129.0106,35.0975],['0fe7bb1359','84a57927b4','609db0b807','eb675ca414','961bf908a4'],227,16,4],
- ['Korea, Seoul','Seoul','37, Gyedong-gil, Jongno-gu','Morning light in the Bukchon alleys','Came before 9am to have the alleys almost to myself. Tiled roofs, wooden gates and the city towers peeking in the distance. Please keep quiet — people still live here.',1,1,[126.9850,37.5826],['c7df7c8215','1688c4fc5a','545a1c9ce2','5ac8e07328','76cc927ea9'],96,7,3],
- ['Korea, Sokcho','Sokcho','1085, Seoraksan-ro','Seorak cable car above the clouds','The cable car ride takes six minutes and the view of the granite peaks is wild. Clouds rolled under us halfway up. Buy tickets online — the line at the station is long.',0,3,[128.4913,38.1730],['38ebd72ae2','8bc7555606','defd98e4da','70b348d199','e920d4469d'],189,12,10],
+ ['Korea, Sokcho','Sokcho','11, Yeonggeumjeong-ro 2-gil, 24825','The sunset over the lake was breathtaking','It painted the sky in hues of orange and pink. Sat on the pavilion steps until the last light slid behind the lighthouse, then walked back along the breakwater with a warm can of corn tea.',0,0,[128.6003,38.2118],['c65d4c3169','b4b1b4edf7','aeb463fdd7'],128,14,5,['Get there 20 min before sunset','The pavilion steps are the best seat','Wind picks up fast — bring a layer']],
+ ['Korea, Busan','Busan','219, Gwanganhaebyeon-ro, Suyeong-gu','Gwangan Bridge lit up the whole bay','Stayed on the sand until the drone show started. The bridge changes colour every few minutes and the waves look like they are glowing. Fried chicken from the alley behind the beach tastes better here.',3,2,[129.1186,35.1532],['f0e95ca852','77affa408d','9803fbb22f'],342,41,8,['Drone show on Saturdays at 8pm','Fried chicken in the alley behind','The bridge turns purple at 10']],
+ ['Korea, Daegu','Daegu','6-11, Dalgubeol-daero 450-gil, Jung-gu','Murals and torn posters all afternoon','A lane where every wall is layered with murals and half-peeled gig posters. A busker played old folk songs at the corner, and the tiny record shop at the end lets you listen before you buy.',4,5,[128.6061,35.8604],['0c8819c4f1','ed6662f200','0a41ab6a61'],87,9,6,['Every wall is a new painting','Torn posters make the best backdrop','Busker on the corner at 4pm']],
+ ['Korea, Gangneung','Gangneung','17, Changhae-ro 14beon-gil','Coffee with the sound of waves','Anmok coffee street is lined with roasteries facing the sea. I took my latte down to the blue benches and watched the tide roll in. Go early on weekdays for a window seat.',1,4,[128.9469,37.7726],['ce468e9545','a5a2d6e0cf','1b50b110ad'],203,22,4,['Take your latte down to the sand','Blue benches facing the water','Window seats go by 10am']],
+ ['Korea, Jeonju','Jeonju','99, Girin-daero, Wansan-gu','Lanterns over the hanok rooftops','Walked the hanok village after dark when the lanterns came on. The rooftops curve like waves, every courtyard smells like grilled rice cakes, and the stone gate at the end glows amber.',6,6,[127.1530,35.8150],['1a2ccdd155','545a1c9ce2','d7ee0d3ada'],176,18,7,['Lanterns switch on at 7pm','Grilled skewers on every corner','The stone gate glows after dark']],
+ ['Korea, Gyeongju','Gyeongju','9, Gyerim-ro, Hwangnam-dong','Green hills that are actually royal tombs','The burial mounds look like soft green waves in the middle of town. Cherry trees line the path in spring and the evening light turns everything gold. Bring a picnic blanket.',5,1,[129.2117,35.8384],['2660c9318e','b4c2f250c6','7b900c4b81'],154,12,9,['Royal tombs that look like hills','Cherry trees peak in early April','Bring a blanket for golden hour']],
+ ['Korea, Seoul','Seoul','14, Yeonmujang-gil, Seongdong-gu','Old factories turned into cafés','Seongsu still has the brick walls of its shoe factories, now filled with galleries and wine bars. Found a tiny bakery selling salt bread that sells out by noon.',7,5,[127.0557,37.5446],['0b6838ebef','17b720ef5a','cc17e8e9c9'],231,27,3,['Salt bread sells out by noon','Natural wine bar opens at 6','Brick walls from the shoe factories']],
+ ['Korea, Jeju','Jeju','284-12, Ilchul-ro, Seongsan-eup','Sunrise from the crater rim','A 25-minute climb in the dark, then the whole sky cracked open in orange. Below the crater, a sea cave opens onto a tiny beach you can only reach at low tide.',8,3,[126.9426,33.4581],['91aa61cb37','e920d4469d','70b348d199'],298,33,12,['Start the climb in the dark','A sea cave hides a tiny beach','Wind is wild at the top']],
+ ['Korea, Sokcho','Sokcho','Jangsa-dong, Sokcho-si','A quiet harbor with a clear beach','Fishing boats come in around noon and the beach beside the port is almost empty. Spread out a mat, lie down and listen to the gulls. The squid sundae stall is a must.',2,4,[128.5703,38.2335],['d16aa1ec82','d0deb24a76','fd463b4ad8'],76,8,5,['Boats come in around noon','The squid sundae stall is a must','Read the paper to the sound of gulls']],
+ ['Korea, Taean','Taean','Seunon-ri, Anmyeon-eup','Two rocks and a low-tide path','At low tide you can walk almost all the way to the Grandfather and Grandmother rocks. Rent a yellow umbrella by the dunes and wait — the sea turns completely pink at sunset.',4,2,[126.3325,36.4987],['609db0b807','b0d1b00c11','64f058d73d'],112,10,10,['Walk out when the tide is lowest','Yellow umbrellas for rent','The sea turns pink at sunset']],
+ ['Korea, Daejeon','Daejeon','169, Dunsan-daero, Seo-gu','A forest walk in the middle of the city','Hanbat Arboretum is huge and the paths are shaded the whole way. The rose garden was in full bloom, the old iron bridge is hidden in the pines, and the lawn is made for naps.',3,7,[127.3895,36.3667],['a16b611bcb','dfd38b8050','363e59119f'],98,11,6,['Shade the whole way round','An iron bridge hidden in the pines','Nap spot on the big lawn']],
+ ['Korea, Busan','Busan','203, Gamnae 2-ro, Saha-gu','Pastel houses stacked up the hill','Gamcheon village looks like a box of crayons from the top. Follow the fish signs to find hidden viewpoints and tiny studios. The Little Prince statue has a queue, but it moves fast.',7,6,[129.0106,35.0975],['84a57927b4','4e65203b4f','31d41020e1'],265,30,8,['Follow the fish signs uphill','Tiny studios behind blue doors','The statue queue moves fast']],
+ ['Korea, Seoul','Seoul','37, Gyedong-gil, Jongno-gu','Morning light in the Bukchon alleys','Came before 9am to have the alleys almost to myself. Tiled roofs, wooden gates and scooters parked in the shade. Please keep quiet — people still live here.',1,1,[126.9850,37.5826],['20a605726b','1688c4fc5a','c7df7c8215'],189,19,5,['Come before 9am','Tiles, wooden gates, quiet lanes','People live here — keep it down']],
+ ['Korea, Sokcho','Sokcho','1085, Seoraksan-ro','Seorak cable car above the clouds','The cable car ride takes six minutes and the view of the granite peaks is wild. Clouds rolled under us halfway up. Buy tickets online — the line at the station is long.',0,3,[128.4913,38.1730],['7f832f70a5','cdc89c0bcd','38ebd72ae2'],143,15,15,['Six minutes to the granite peaks','Clouds roll under the cabin','Book tickets online']],
+ ['Korea, Daegu','Daegu','10, Gukchaebosang-ro, Jung-gu','A reading room older than the city','Dark wood shelves up to the ceiling and one ray of light from the tall window. It is silent except for page turns. The old radio in the corner still plays classical music at noon.',5,9,[128.5996,35.8706],['0b644ddc41','e0bbd62a5f','a2d5107904'],64,7,4,['Shelves up to the ceiling','The radio plays at noon','Silence except page turns']],
+ ['Korea, Busan','Busan','Haeundae Blueline Park, Haeundae-gu','Tiny sky capsules along the coast','Colourful two-person capsules crawl along an old rail line above the sea. The ride to Cheongsapo takes half an hour and every minute is a postcard. Sit facing the ocean side.',6,12,[129.1796,35.1587],['9f1b6664c4','8bc7555606','33100e65ef'],322,36,6,['Sit on the ocean side','30 minutes of postcard views','Book the sunset slot early']],
+ ['Korea, Seoul','Seoul','Huam-dong, Yongsan-gu','Cycling up to the tower','Rented a bike at the river and pushed it up the last stretch to Namsan. The streets below the tower are full of tiny shops and the downhill ride back is the best part.',2,17,[126.9882,37.5512],['3fd1cca8e7','98885f2348','da8dc61a5c'],97,9,11,['Push the bike up the last hill','Tiny shops below the tower','The downhill is the reward']],
+ ['Korea, Sokcho','Sokcho','186, Cheongchoho-ro','Fairground lights by the lake','The Sokcho Eye is right on the beach, and next to it a small fair spins old swing rides. Go after sunset when the bulbs come on and the line disappears.',8,10,[128.6010,38.1905],['0fe7bb1359','2b2b99f6e8','4f722be170'],181,20,9,['Bulbs come on after sunset','Swing ride from the 80s','No line after 9pm']],
+ ['Korea, Sokcho','Sokcho','12, Jungang-ro 147beon-gil','Market kimbap and fresh fruit','The second floor of Jungang market is all small stalls. Got squid kimbap, a box of orange crates full of tangerines, and a brunch bowl from the café on the corner.',4,14,[128.5906,38.2045],['202ccf3fd9','087deb8b31','bd9920c026'],133,16,4,['Squid kimbap on the 2nd floor','Tangerines by the crate','Bring cash for the stalls']],
+ ['Korea, Seoul','Seoul','Mangwon-dong, Mapo-gu','A café run by a very serious cat','Green tiles, a shelf of old film cameras and a grey cat who inspects every customer. The owner fixes vintage radios in the back and will show you how they work if you ask.',3,13,[126.9056,37.5560],['20a469d0ce','961bf908a4','48973ed9fe'],210,24,6,['The cat inspects every guest','Old film cameras on the shelf','Ask about the radio repairs']],
+ ['Korea, Incheon','Incheon','Gate 23, Incheon Airport T2','Window seat, golden hour, no wifi','The best part of the trip happened before landing — 40 minutes of gold light over the clouds. Turned off my phone and just watched the wing.',1,12,[126.4407,37.4602],['faacec153c','d0a8419c9a','97151d0df0'],156,13,0,['Always book the window seat','Gold light over the wing','Phone off, eyes up']],
+ ['Korea, Incheon','Incheon','Departure Hall 3, Incheon Airport','Packed light for once','One black carry-on, one book, one phone. The terminal at night is weirdly calm, and the A3 gate looks like a movie set when nobody is around.',7,9,[126.4505,37.4491],['0a2fb49803','627c2eead1','748998ff11'],71,5,0,['One carry-on is enough','Bring a paper book','The terminal is calm at night']],
+ ['Korea, Seoul','Seoul','Yongsan-gu, Seoul','A city still being built','Walked through the new district at golden hour. Raw concrete, empty balconies and long shadows — it felt like a gallery that does not know it is one.',6,11,[126.9696,37.5296],['513cdcb47b','579b550f86','36162d5ccb'],88,6,12,['Raw concrete at golden hour','Long shadows on empty floors','A gallery that does not know it']],
+ ['Korea, Busan','Busan','Yeongdo-gu, Busan','Long shadows at 5pm','Yeongdo has these empty side streets where the sun hits low and everything casts a shadow twice as tall. A dog crossed the crosswalk like it owned the island.',5,19,[129.0682,35.0910],['1b65e7756a','4dafa2010b','8d7a1d6471'],59,4,7,['Shadows twice as tall','A dog owns the crosswalk','Go at 5pm for the light']],
+ ['Australia, Gold Coast','Gold Coast','Burleigh Heads, Queensland','Blue water all the way to the towers','Climbed the headland trail for a view of the whole coastline. Surfers below, skyscrapers on the horizon, and fresh juice from the stand by the car park.',8,8,[153.4527,-28.0869],['9621f3cac2','15ed751e49','cdc89c0bcd'],245,21,10,['Walk the headland trail','Surfers below, towers beyond','Juice stand by the car park']],
+ ['Germany, Berlin','Berlin','Kreuzberg, Berlin','A corner market and a long walk','Started with peaches from the corner market, then walked along the canal past half-built offices and street barriers painted like art.',2,17,[13.4030,52.4990],['1891915778','e95ee8d79c','f4267a5d90'],102,9,8,['Peaches from the corner market','Walk the canal path','Even the barriers look designed']],
+ ['Japan, Tokyo','Tokyo','Jingumae, Shibuya City','Street style on a Sunday','Harajuku on a Sunday is a runway. Denim on denim, newspapers as accessories and a graffiti wall that everyone poses in front of.',0,0,[139.7051,35.6702],['4b1f452e03','eb0753e704','48630874f0'],388,47,5,['Sunday is the best day to go','The graffiti wall is a must','Denim on denim on denim']],
+ ['Korea, Seoul','Seoul','Yeouido Hangang Park','Picnic by the river with a tiny guest','Laid out a blanket by the river, ordered chicken to the park and a ladybug landed right on my forehead. Hundreds of people, but somehow still peaceful.',3,4,[126.9346,37.5283],['4ed3044cd8','5cd8998942','94041cdcb7'],299,31,6,['Order chicken to the park','A ladybug said hello','Sunset over the river at 7']],
+ ['USA, New York','New York','14 N Moore St, Tribeca','The firehouse from the movie','Yes, it is the real one. Took the subway down, walked past the firehouse twice to be sure, then ate pizza on the steps around the corner.',7,15,[-74.0065,40.7197],['a703923011','76cc927ea9','98885f2348'],176,19,7,['Yes, it is the real firehouse','Take the 1 train down','Pizza on the steps nearby']],
+ ['Korea, Samcheok','Samcheok','Route 7, Gangwon-do','Road trip down Route 7','Three friends, one car and the whole east coast. We stopped every time the sea looked too blue to drive past, which was often.',4,8,[129.1650,37.4499],['7e0dcbb6ee','bca6fd3d48','defd98e4da'],214,23,0,['Stop whenever the sea is too blue','Playlist rules: driver picks','Bikes for the last stretch']],
+ ['Korea, Seoul','Seoul','Children’s Grand Park, Gwangjin-gu','A giant doll and a bakery queue','The park has a five-metre doll everyone stops to photograph, and the bakery by the gate makes the crustiest sourdough in the city.',5,16,[127.0817,37.5481],['609a15ebe4','17b720ef5a','2b2b99f6e8'],121,12,9,['Say hi to the giant doll','Sourdough at the gate bakery','Go on a weekday morning']],
 ];
 const NP=PINS.length;
 // photo stacks for the home "Inspired by" cards (DOM order: back-left, back-right, front) — same film-photo mood as the Figma set
-const STACKS=[['4ed3044cd8','fd463b4ad8','15ed751e49'],['2b2b99f6e8','a5a2d6e0cf','7e0dcbb6ee'],['84a57927b4','961bf908a4','defd98e4da'],['609db0b807','e0bbd62a5f','25e9f39459'],
-  ['5ac8e07328','76cc927ea9','bca6fd3d48'],['0fe7bb1359','cdc89c0bcd','70b348d199'],['48973ed9fe','961bf908a4','7e0dcbb6ee'],['cdc89c0bcd','a5a2d6e0cf','70b348d199'],
-  ['fd463b4ad8','609db0b807','4ed3044cd8'],['a5a2d6e0cf','e0bbd62a5f','bca6fd3d48'],['25e9f39459','84a57927b4','15ed751e49'],['0fe7bb1359','2b2b99f6e8','7e0dcbb6ee'],
-  ['76cc927ea9','5ac8e07328','defd98e4da'],['e0bbd62a5f','961bf908a4','25e9f39459']];
+// photo stacks for the home "Inspired by" cards (DOM order: back-left, back-right, front) — the pin's own photos
+const STACKS=PINS.map(p=>{const h=p[8];return [h[1%h.length],h[2%h.length],h[0]];});
 let PINSTACK=null; // stack photos of the card that was tapped → shown first in the detail
 let PINPHOTO=null; // photo tapped in the blind view → shown first in the pin detail
 const IMGX=h=>`url(img/${h}.${h==='26fef96dc7'?'png':'jpg'})`;
@@ -196,6 +217,16 @@ function fillCards(root,name){
     const stack=imgs.length===3&&imgs.every(d=>d._abs[2]>=150&&d._abs[2]<=180&&d._abs[3]>=190);
     if(stack){card.dataset.stack=1;imgs.forEach((d,j)=>setImg(d,STACKS[i][j]));}
     else imgs.forEach(d=>{setImg(d,P[8][photo%P[8].length]);photo++;});
+  });
+  // Figma placeholder sentences in other cards (folder pins, AR lists, route lists) → a different pin each
+  const FILLER=/^(The sunset over the lake was breathtaking\. The sunset|The sunset over the lake was breathtaking\. The vibrant|The vibrant colors|The mountain peak|Strolling through|At the seaside|Exploring the desert|In the quiet library|Watching the sun dip|Sunsets over Dadaepo|The vibrant energy|Wandering through)/;
+  let fk=0;const used=new Set([...root.querySelectorAll('[data-pin]')].map(e=>+e.dataset.pin));
+  root.querySelectorAll('.t').forEach(t=>{if(t.closest('[data-pin]')||!FILLER.test(txt(t)))return;
+    let card=t;while(card.parentElement&&card.parentElement._abs&&card.parentElement._abs[3]<330&&card.parentElement._abs[2]<400)card=card.parentElement;
+    let i=(hstr(name)+fk*7)%NP;fk++;for(let g=0;g<NP&&used.has(i);g++)i=(i+1)%NP;used.add(i);const P=PINS[i];card.dataset.pin=i;
+    setText(t,P[3]+'. '+P[4]);
+    card.querySelectorAll('.t').forEach(x=>{const v=txt(x);if(/^\d+ min$/.test(v))setChip(x,P[11]+' min');});
+    let ph=0;[...card.querySelectorAll('div')].filter(d=>d.children.length===0&&/img\//.test(d.style.background)&&d._abs&&d._abs[2]>=40&&d._abs[3]>=40).forEach(d=>{setImg(d,P[8][ph%P[8].length]);ph++;});
   });
   // hidden-gem quote cards
   let q=0;root.querySelectorAll('.t').forEach(t=>{const s=txt(t);if(/^“.*”$/.test(s)){const i=pickFor(name+'q',q++);setText(t,'“'+PINS[i][3]+'”');let c=t;for(let u=0;u<4&&c.parentElement;u++)c=c.parentElement;c.dataset.pin=i;}});
@@ -963,10 +994,21 @@ function buildPan(n,cv,name){
           if(t[5].length&&!/url\(/.test(JSON.stringify(t[5]))){const tx=el.querySelector('.t');if(tx){const P=PINS[pinIdx(t._pin)];const p=tx.querySelector('p');p.textContent=P[3];p.style.cssText='display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:'+Math.max(1,Math.floor(parseFloat(tx.style.height)/16))+';overflow:hidden';}}
           if(t[5].length){const bl='blur(9px) saturate(1.6)';el.style.backdropFilter=bl;el.style.webkitBackdropFilter=bl;
             el.style.boxShadow=(el.style.boxShadow?el.style.boxShadow+',':'')+'inset 2px 2px 2px -1px rgba(255,255,255,.44),inset -2px -2px 2px -1px rgba(255,255,255,.18)';}}
-        layer.appendChild(st);copies.push(st);}
-      inst.push({c,i,Pc,cw,copies});}
+        st._ci=ci;layer.appendChild(st);copies.push(st);}
+      inst.push({c,i,Pc,cw,copies,ci});}
   });
   const mod=(a,m)=>((a%m)+m)%m;
+  // content by WORLD position: tiles come in clusters of 3 that share a pin (photo/memo/photo), so any area — and the
+  // zoomed-out group standing for it — shows one pin's photos and notes together
+  const hh=(...v)=>{let h=2166136261;for(const x of v){h^=(x|0)+0x9e3779b9;h=Math.imul(h,16777619);h^=h>>>15;}return Math.abs(h);};
+  const pinFor=(ci,n,m,ti)=>hh(ci,n,m,Math.floor(ti/3))%NP;
+  const isMusic=t=>t[5].length&&/url\(/.test(JSON.stringify(t[5]));
+  const photoFor=(k,ti,n,m)=>{const ph=PINS[k][8];return ph[(ti+hh(n,m))%ph.length];};
+  const noteFor=(k,ti,n,m)=>{const nt=PINS[k][12];return nt[(ti+hh(m,n))%nt.length];};
+  function skin(st,ci,n,m){const key=n+','+m;if(st._key===key)return;st._key=key;const tiles=base[ci].n[5];
+    [...st.children].forEach((el,ti)=>{const tl=tiles[ti];if(!tl)return;const k=pinFor(ci,n,m,ti);el.dataset.pin=String(k);
+      if(!tl[5].length){setImg(el,photoFor(k,ti,n,m));return;}
+      const p=el.querySelector('.t p');if(!p)return;p.textContent=isMusic(tl)?SONGS[PINS[k][6]%SONGS.length]:noteFor(k,ti,n,m);});}
   let ox=PANPOS.x,oy=PANPOS.y,bx=PANPOS.bx,by=PANPOS.by;
   let zs=PANPOS.s;
   const WH=()=>parseFloat(wrap.style.height)||932, CX=215, CY=()=>WH()/2;
@@ -988,23 +1030,21 @@ function buildPan(n,cv,name){
   const K0=[PANPOS.x-GK*PANPOS.bx,PANPOS.y-GK*PANPOS.by];
   const tileHash=t=>((t[4].match(/img\/([0-9a-f]{10})/)||[])[1]);
   const memoText=t=>{const tx=JSON.stringify(t[5]);if(/url\(/.test(tx)){const m=tx.match(/"T","([^"]*)"/);return m?m[1].replace(/<[^>]+>/g,''):'';}return PINS[pinIdx(t._pin)][3];};
-  function regionTiles(wx,wy){const out=[];const cy=CY();
-    for(const c of base){const [,,cw,ch,,tiles]=c.n;const Pc=ch+GAP;
+  function regionTiles(wx,wy){const out=[];
+    base.forEach((c,ci)=>{const [,,cw,ch,,tiles]=c.n;const Pc=ch+GAP;
       for(let dn=-2;dn<=2;dn++){const n=Math.round((wx-c.bx-cw/2)/P)+dn,X=c.bx+n*P;
         for(let dm=-1;dm<=1;dm++){const m=Math.round((wy-c.by-ch/2)/Pc)+dm;
-          for(const tl of tiles){const tx=X+tl[0]+tl[2]/2,ty=c.by+m*Pc+tl[1]+tl[3]/2;out.push({t:tl,d:Math.hypot(tx-wx,(ty-wy)*.8)});}}}}
+          tiles.forEach((tl,ti)=>{const tx=X+tl[0]+tl[2]/2,ty=c.by+m*Pc+tl[1]+tl[3]/2;out.push({tl,ci,n,m,ti,d:Math.hypot(tx-wx,(ty-wy)*.8)});});}}});
     return out.sort((a,b)=>a.d-b.d);}
   function makeGroup(i,j){const sx=(j&1)*GPX/2,qx=i*GPX+sx+209.4,qy=j*GPY+486,cy=CY();
     const wx=GK*(qx-CX)+CX-K0[0],wy=GK*(qy-cy)+cy-K0[1];
-    const R=regionTiles(wx,wy),phs=R.filter(r=>!r.t[5].length&&tileHash(r.t)),mem=R.filter(r=>r.t[5].length);
-    const mus=mem.filter(r=>/url\(/.test(JSON.stringify(r.t[5]))),txt=mem.filter(r=>!/url\(/.test(JSON.stringify(r.t[5])));
-    const p1=phs[0],p2=phs.find(r=>tileHash(r.t)!==tileHash(p1.t))||phs[1],m1=txt[0],m2=txt.find(r=>memoText(r.t)!==memoText(m1.t))||txt[1],mu=mus[0];
+    const R=regionTiles(wx,wy),p1=R.find(r=>!r.tl[5].length);
+    const k=pinFor(p1.ci,p1.n,p1.m,p1.ti),P0=PINS[k],main=photoFor(k,p1.ti,p1.n,p1.m),other=P0[8].find(h=>h!==main)||main;
+    const nts=P0[12],a0=hh(i,j)%nts.length;
     const g=document.createElement('div');g.style.cssText='left:0;top:0;width:0;height:0;will-change:transform';
     const flip=(i+j)&1,keep=REG;REG=[];
-    photo(g,132,346,171,234,tileHash(p1.t),0,p1.t._pin);photo(g,flip?50:268,flip?440:429,114,156,tileHash(p2.t),flip?-12:15,p2.t._pin);
-    if(m1)memo(MH,35+(flip?150:0),369,memoText(m1.t),1,g,m1.t._pin);
-    if(mu)memo(MM,58+(flip?120:0),502,memoText(mu.t),1,g,mu.t._pin);
-    if(m2)memo(MI,189-(flip?150:0),679,memoText(m2.t),2,g,m2.t._pin);
+    photo(g,132,346,171,234,main,0,k);photo(g,flip?50:268,flip?440:429,114,156,other,flip?-12:15,k);
+    memo(MH,35+(flip?150:0),369,nts[a0],1,g,k);memo(MM,58+(flip?120:0),502,SONGS[P0[6]%SONGS.length],1,g,k);memo(MI,189-(flip?150:0),679,nts[(a0+1)%nts.length],2,g,k);
     REG=keep;bl.appendChild(g);return g;}
   function renderBoard(g){const cy=CY();
     bl.style.transform=`translate(${(CX*(1-g)).toFixed(2)}px,${(cy*(1-g)).toFixed(2)}px) scale(${g.toFixed(4)})`;
@@ -1027,8 +1067,9 @@ function buildPan(n,cv,name){
     const x0=CX-CX/sb-20,x1=CX+CX/sb+20,y0=cy-cy/sb-20,y1=cy+(WH()-cy)/sb+20;
     for(const I of inst){const X=I.c.bx+I.i*P+mod(ox,P)-P;const vis=X+I.cw>x0&&X<x1;
       const Y0=mod(I.c.by+oy,I.Pc)-2*I.Pc;
+      const wn=I.i-1-Math.floor(ox/P),wm0=-2-Math.floor((I.c.by+oy)/I.Pc);
       I.copies.forEach((st,j)=>{const Y=Y0+j*I.Pc;const on=vis&&Y+I.Pc>y0&&Y<y1;
-        st.style.display=on?'':'none';if(on)st.style.transform=`translate3d(${X}px,${Y}px,0)`;});}
+        if(on)skin(st,I.ci,wn,wm0+j);st.style.display=on?'':'none';if(on)st.style.transform=`translate3d(${X}px,${Y}px,0)`;});}
   }
   place();cv.appendChild(wrap);
   // drag + inertia, tap / long-press
