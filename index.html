@@ -1107,8 +1107,8 @@ function buildPan(n,cv,name){
   // no photo shown twice on one screen: tiles already on screen keep theirs, newcomers take an unused photo
   const POOL=[...new Set(PINS.flatMap(p=>p[8]))];let shownBefore=new Set(),dedupT=0;
   function setTilePhoto(el,h){el.dataset.bg=h;if(el._ph)el._ph.style.backgroundImage=IMGX(h);else if(el.dataset.tile==='photo')setImg(el,h);}
-  function dedupe(){const W=wrap.getBoundingClientRect();const vis=[];
-    for(const el of wrap.querySelectorAll('[data-bg]')){if(el.offsetParent===null)continue;const r=el.getBoundingClientRect();
+  function dedupe(){const W=wrap.getBoundingClientRect();const vis=[];const scope=parseFloat(board.style.opacity||0)>=.5?board:layer0;
+    for(const el of scope.querySelectorAll('[data-bg]')){if(el.offsetParent===null)continue;const r=el.getBoundingClientRect();
       if(r.right>W.left&&r.left<W.right&&r.bottom>W.top&&r.top<W.bottom&&r.width>2)vis.push(el);}
     vis.sort((x,y)=>(shownBefore.has(y)?1:0)-(shownBefore.has(x)?1:0));
     const used=new Set();
