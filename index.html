@@ -1090,7 +1090,7 @@ function buildPan(n,cv,name){
     return out.sort((a,b)=>a.d-b.d);}
   // three hand-placed layouts (Figma 45 scale; group centre ≈ 210,500): [kind, x, y, w, h, rot]
   const LAYOUTS=[
-    [['peek',300,286,92,122,11],['main',132,346,171,234,-1.5],['second',268,429,114,156,14],['heart',35,369,0,0,-2.5],['music',58,502,0,0,1.5],['idea',189,679,0,0,-1.5]],
+    [['peek',300,286,92,122,11],['main',132,346,171,234,-1.5],['second',268,429,114,156,14],['heart',35,369,0,0,-2.5],['music',58,502,0,0,1.5],['idea',176,598,0,0,-1.5]],
     [['peek',58,318,96,128,-12],['second',214,330,138,186,7],['main',92,372,166,224,-5],['heart',236,556,0,0,3],['music',222,658,0,0,-2],['idea',36,626,0,0,2]],
     [['peek',270,640,100,130,9],['main',40,350,180,246,-3],['second',150,520,120,160,-9],['heart',236,372,0,0,2.5],['music',244,456,0,0,-1.5],['idea',236,526,0,0,1.5]]];
   function makeGroup(i,j){const sx=(j&1)*GPX/2,qx=i*GPX+sx+209.4,qy=j*GPY+486,cy=CY();
@@ -1106,7 +1106,7 @@ function buildPan(n,cv,name){
       if(kind==='peek')el=photo(g,x,y,w,h,peek,rot,(k+7)%NP,true);
       else if(kind==='main')el=photo(g,x,y,w,h,main,rot,k);
       else if(kind==='second')el=photo(g,x,y,w,h,other,rot,k);
-      else{const tpl=kind==='heart'?MH:kind==='music'?MM:MI;const txt=kind==='heart'?nts[a0]:kind==='music'?SONGS[P0[6]%SONGS.length]:nts[(a0+1)%nts.length];
+      else{const tpl=kind==='heart'?MH:kind==='music'?MM:MI;const txt=kind==='heart'?nts[a0]:kind==='music'?SONGS[P0[6]%SONGS.length]:P0[3]+'. '+P0[4];   // the 2-line idea card always gets text that fills both lines
         memo(tpl,x,y,txt,kind==='idea'?2:1,g,k);el=g.lastChild;el._rot=rot;el.style.transformOrigin='50% 50%';}
       if(el){el._cx=x+(parseFloat(el.style.width)||w)/2;el._cy=y+(parseFloat(el.style.height)||h)/2;cards.push(el);}}
     // area chip
