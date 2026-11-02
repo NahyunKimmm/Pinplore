@@ -1021,16 +1021,16 @@ function buildPan(n,cv,name){
     [...st.children].forEach((el,ti)=>{const tl=tiles[ti];if(!tl)return;const k=pinFor(ci,n,m,ti);el.dataset.pin=String(k);
       if(!tl[5].length){
         if(el._bg0==null)el._bg0=el.style.background;
-        el.querySelectorAll(':scope>.mz,:scope>.mzp').forEach(x=>x.remove());el.style.background=el._bg0;el.style.overflow='';
+        el.querySelectorAll(':scope>.mz,:scope>.mzp').forEach(x=>x.remove());el.style.background=el._bg0;el.style.overflow='';el._ph=null;el._pk=k;
         const img=photoFor(k,ti,n,m);el.dataset.bg=img;el.dataset.tile='photo';
         const w=tl[2],h=tl[3],r=hh(ci,n,m,ti,7)%100;
         if(r<40){                               // ~40% of photo tiles carry a memo so notes are spread evenly
           if(h>=190){                           // tall: photo on top, memo below
             el.style.background='none';el.style.overflow='visible';
-            const ph=document.createElement('div');ph.className='mzp';ph.style.cssText=`left:0;top:0;width:${w}px;height:${h-84}px;border-radius:5px;background:${IMGX(img)} center/cover no-repeat`;
+            const ph=document.createElement('div');ph.className='mzp';el._ph=ph;ph.style.cssText=`left:0;top:0;width:${w}px;height:${h-84}px;border-radius:5px;background:${IMGX(img)} center/cover no-repeat`;
             const mc=memoCard(k,w,69,noteFor(k,ti+1,n,m),r);if(mc){mc.style.top=(h-69)+'px';el.append(ph,mc);}else el.append(ph);
           }else{                                // short: the tile becomes a memo card
-            const mc=memoCard(k,w,h,h>=120?PINS[k][3]+'. '+PINS[k][4]:noteFor(k,ti+1,n,m),r);
+            const lines=Math.max(1,Math.floor((h-46)/17)),mc=memoCard(k,w,h,lines>=3?PINS[k][3]+'. '+PINS[k][4]:lines===2?PINS[k][3]:noteFor(k,ti+1,n,m),r);
             if(mc){el.style.background='none';el.style.overflow='visible';el.dataset.tile='memo';el.appendChild(mc);}else setImg(el,img);}
         }else setImg(el,img);
         return;}
@@ -1052,7 +1052,7 @@ function buildPan(n,cv,name){
   function photo(g,x,y,w,h,img,rot,pin,small){const d=document.createElement('div');
     d.style.cssText=`left:${x}px;top:${y}px;width:${w}px;height:${h}px;border-radius:${small?5:6.9}px;overflow:hidden;background:${IMGX(img)} center/cover no-repeat,#fff;transform-origin:50% 50%;`+
       `box-shadow:0 ${small?6:14}px ${small?16:34}px rgba(20,30,60,${small?.14:.2}),0 2px 6px rgba(20,30,60,.08)`;
-    d._rot=rot||0;d.dataset.tile='photo';d.dataset.pin=pin;g.appendChild(d);return d;}
+    d._rot=rot||0;d.dataset.tile='photo';d.dataset.pin=pin;d.dataset.bg=img;d._ph=d;g.appendChild(d);return d;}
   // the canvas region a group stands for: board point q <-> canvas world point GK*(q-C)+C-K (K is invariant under pan/zoom)
   const K0=[PANPOS.x-GK*PANPOS.bx,PANPOS.y-GK*PANPOS.by];
   const tileHash=t=>((t[4].match(/img\/([0-9a-f]{10})/)||[])[1]);
@@ -1104,8 +1104,21 @@ function buildPan(n,cv,name){
         let el=cells.get(key);if(!el){el=makeGroup(i,j);cells.set(key,el);}
         el.style.transform=`translate3d(${(i*GPX+sx+bx+el._jx).toFixed(1)}px,${(j*GPY+by+el._jy).toFixed(1)}px,0)`;spread(el,SPREAD);}}
     for(const [key,el] of cells)if(!need.has(key)){el.remove();cells.delete(key);}}
+  // no photo shown twice on one screen: tiles already on screen keep theirs, newcomers take an unused photo
+  const POOL=[...new Set(PINS.flatMap(p=>p[8]))];let shownBefore=new Set(),dedupT=0;
+  function setTilePhoto(el,h){el.dataset.bg=h;if(el._ph)el._ph.style.backgroundImage=IMGX(h);else if(el.dataset.tile==='photo')setImg(el,h);}
+  function dedupe(){const W=wrap.getBoundingClientRect();const vis=[];
+    for(const el of wrap.querySelectorAll('[data-bg]')){if(el.offsetParent===null)continue;const r=el.getBoundingClientRect();
+      if(r.right>W.left&&r.left<W.right&&r.bottom>W.top&&r.top<W.bottom&&r.width>2)vis.push(el);}
+    vis.sort((x,y)=>(shownBefore.has(y)?1:0)-(shownBefore.has(x)?1:0));
+    const used=new Set();
+    for(const el of vis){let h=el.dataset.bg;if(used.has(h)){const k=+el.dataset.pin||0;
+        const cand=[...PINS[k%NP][8],...POOL.slice(hh(k,7)%POOL.length),...POOL];h=cand.find(x=>!used.has(x))||h;setTilePhoto(el,h);}
+      used.add(h);}
+    shownBefore=new Set(vis);}
+  const queueDedupe=()=>{if(dedupT)return;dedupT=setTimeout(()=>{dedupT=0;dedupe();},90);};
   function place(){
-    PANPOS.x=ox;PANPOS.y=oy;PANPOS.s=zs;PANPOS.bx=bx;PANPOS.by=by;
+    PANPOS.x=ox;PANPOS.y=oy;PANPOS.s=zs;PANPOS.bx=bx;PANPOS.by=by;queueDedupe();
     const a=Math.min(1,Math.max(0,(zs-ZT0)/(ZT1-ZT0)));      // 1 = dense canvas only, 0 = group board only
     layer0.style.opacity=a;layer0.style.visibility=a>0?'':'hidden';board.style.opacity=1-a;board.style.visibility=a<1?'':'hidden';
     board.style.pointerEvents=a<.5?'auto':'none';layer0.style.pointerEvents=a<.5?'none':'';
