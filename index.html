@@ -765,18 +765,21 @@ function buildZoom(n,cv){
   const [x,y,w,h,css,kids]=n;const DY=(typeof DH!=='undefined'?DH:932)-932;
   const box=c=>{const d=document.createElement('div');d.style.cssText=c;return d;};
   const wrap=box(`left:0;top:0;width:430px;height:932px;overflow:hidden;touch-action:none;cursor:grab`);wrap.className='zoomv';
-  const dots=box(`left:0;top:0;width:100%;height:100%;pointer-events:none;background-image:radial-gradient(circle,rgba(89,152,255,.22) 1.1px,transparent 1.7px)`);
   const layer=box(`left:0;top:${DY/2}px;width:430px;height:932px;transform-origin:0 0;will-change:transform`);
   const keep=REG;REG=[];for(const k of kids)node(k,layer);REG=keep;
   const items=[...layer.children];
   for(const el of items){const zt=el.style.getPropertyValue('--zt').trim();el.dataset.zt=zt;
     if(zt==='memo'){const bl='blur(9px) saturate(1.6)';el.style.backdropFilter=bl;el.style.webkitBackdropFilter=bl;
       el.style.boxShadow=(el.style.boxShadow?el.style.boxShadow+',':'')+'inset 2px 2px 2px -1px rgba(255,255,255,.44),inset -2px -2px 2px -1px rgba(255,255,255,.18)';}}
-  wrap.append(dots,layer);cv.appendChild(wrap);
+  wrap.append(layer);cv.appendChild(wrap);
+  // iPhone Safari: keep its own page pinch / double-tap zoom out of this view
+  ['gesturestart','gesturechange','gestureend'].forEach(ev=>wrap.addEventListener(ev,e=>e.preventDefault(),{passive:false}));
+  wrap.addEventListener('touchstart',e=>{if(e.touches.length>1)e.preventDefault();},{passive:false});
+  wrap.addEventListener('touchmove',e=>e.preventDefault(),{passive:false});
   const Z=ZOOMST,C=[ZC[0],ZC[1]];
   function apply(){const tx=C[0]*(1-Z.s)+Z.x,ty=C[1]*(1-Z.s)+Z.y;
     layer.style.transform=`translate(${tx.toFixed(2)}px,${ty.toFixed(2)}px) scale(${Z.s.toFixed(4)})`;
-    const g=24*Z.s;dots.style.backgroundSize=`${g}px ${g}px`;dots.style.backgroundPosition=`${(tx%g).toFixed(1)}px ${((ty+DY/2)%g).toFixed(1)}px`;}
+}
   apply();
   const lim=()=>[150*Z.s,200*Z.s];
   const local=e=>{const r=wrap.getBoundingClientRect();return [(e.clientX-r.left)/r.width*430,(e.clientY-r.top)/r.height*932-DY/2];};
