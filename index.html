@@ -764,7 +764,7 @@ function bookmarkDrag(tileEl,clientX,clientY){
   folders.forEach(f=>{f.style.transition='transform .28s cubic-bezier(.3,1.5,.5,1),opacity .2s ease';f.style.transformOrigin='50% 100%';});
   row.appendChild(track);ov.appendChild(row);
   // the photo being dragged
-  const bg=(tileEl.style.backgroundImage||tileEl.style.background||'').match(/url\([^)]*\)/);
+  const bg=tileEl.dataset.bg?[IMGX(tileEl.dataset.bg)]:(tileEl.style.backgroundImage||tileEl.style.background||'').match(/url\([^)]*\)/);
   const ghost=document.createElement('div');
   ghost.style.cssText=`left:0;top:0;width:68px;height:86px;border-radius:6px;background:${bg?bg[0]:'#ccc'} center/cover no-repeat;box-shadow:0 0 0 2px #fff,0 10px 24px rgba(0,0,0,.35);transform-origin:50% 50%;will-change:transform;transition:opacity .2s`;
   ov.appendChild(ghost);
@@ -1005,9 +1005,35 @@ function buildPan(n,cv,name){
   const isMusic=t=>t[5].length&&/url\(/.test(JSON.stringify(t[5]));
   const photoFor=(k,ti,n,m)=>{const ph=PINS[k][8];return ph[(ti+hh(n,m))%ph.length];};
   const noteFor=(k,ti,n,m)=>{const nt=PINS[k][12];return nt[(ti+hh(m,n))%nt.length];};
+  // memo cards to reuse (rendered from the Figma memo tiles, icons included)
+  let MEMO_SRC=null;
+  const memoSrc=()=>{if(MEMO_SRC)return MEMO_SRC;MEMO_SRC=[];const st=inst[0]&&inst[0].copies[0];
+    for(const c of inst.filter(I=>I.i===0))for(const el of c.copies[0].children){const tl=base[c.ci].n[5][[...c.copies[0].children].indexOf(el)];
+      if(tl&&tl[5].length&&!isMusic(tl)&&el.querySelector('svg'))MEMO_SRC.push(el);}
+    return MEMO_SRC;};
+  function memoCard(k,w,h,text,v){const src=memoSrc();const s0=src[v%Math.max(1,src.length)];if(!s0)return null;
+    const c=s0.cloneNode(true);c.classList.add('mz');c.removeAttribute('data-tile');c.removeAttribute('data-pin');
+    c.style.left='0px';c.style.top='0px';c.style.width=w+'px';c.style.height=h+'px';c.style.transform='';
+    const tx=c.querySelector('.t');if(tx){const lines=Math.max(1,Math.floor((h-46)/17));tx.style.height=(lines*17+2)+'px';
+      const p=tx.querySelector('p');p.textContent=text;p.style.cssText=`display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:${lines};overflow:hidden`;}
+    return c;}
   function skin(st,ci,n,m){const key=n+','+m;if(st._key===key)return;st._key=key;const tiles=base[ci].n[5];
     [...st.children].forEach((el,ti)=>{const tl=tiles[ti];if(!tl)return;const k=pinFor(ci,n,m,ti);el.dataset.pin=String(k);
-      if(!tl[5].length){setImg(el,photoFor(k,ti,n,m));return;}
+      if(!tl[5].length){
+        if(el._bg0==null)el._bg0=el.style.background;
+        el.querySelectorAll(':scope>.mz,:scope>.mzp').forEach(x=>x.remove());el.style.background=el._bg0;el.style.overflow='';
+        const img=photoFor(k,ti,n,m);el.dataset.bg=img;el.dataset.tile='photo';
+        const w=tl[2],h=tl[3],r=hh(ci,n,m,ti,7)%100;
+        if(r<40){                               // ~40% of photo tiles carry a memo so notes are spread evenly
+          if(h>=190){                           // tall: photo on top, memo below
+            el.style.background='none';el.style.overflow='visible';
+            const ph=document.createElement('div');ph.className='mzp';ph.style.cssText=`left:0;top:0;width:${w}px;height:${h-84}px;border-radius:5px;background:${IMGX(img)} center/cover no-repeat`;
+            const mc=memoCard(k,w,69,noteFor(k,ti+1,n,m),r);if(mc){mc.style.top=(h-69)+'px';el.append(ph,mc);}else el.append(ph);
+          }else{                                // short: the tile becomes a memo card
+            const mc=memoCard(k,w,h,h>=120?PINS[k][3]+'. '+PINS[k][4]:noteFor(k,ti+1,n,m),r);
+            if(mc){el.style.background='none';el.style.overflow='visible';el.dataset.tile='memo';el.appendChild(mc);}else setImg(el,img);}
+        }else setImg(el,img);
+        return;}
       const p=el.querySelector('.t p');if(!p)return;p.textContent=isMusic(tl)?SONGS[PINS[k][6]%SONGS.length]:noteFor(k,ti,n,m);});}
   let ox=PANPOS.x,oy=PANPOS.y,bx=PANPOS.bx,by=PANPOS.by;
   let zs=PANPOS.s;
@@ -1115,7 +1141,7 @@ function buildPan(n,cv,name){
     if(moved){if(performance.now()-lt<80&&Math.abs(vx)+Math.abs(vy)>0.5)raf=requestAnimationFrame(glide);}
     else if(tileEl){wrap._tap=tileEl.dataset.pin;wrap._tapEl=tileEl;}});
   wrap.addEventListener('pointercancel',()=>{clearTimeout(lp);down=false;moved=true;});
-  wrap.addEventListener('click',e=>{e.stopPropagation();if(moved)return;const t=wrap._tap;wrap._tap=null;if(t){PIN=t;PINSTACK=null;const te=wrap._tapEl;const m=te&&te.dataset.tile==='photo'&&(te.style.background||'').match(/img\/([0-9a-f]{10})/);PINPHOTO=m?m[1]:null;run('go:detail');}else flashHint();});
+  wrap.addEventListener('click',e=>{e.stopPropagation();if(moved)return;const t=wrap._tap;wrap._tap=null;if(t){PIN=t;PINSTACK=null;const te=wrap._tapEl;const m=te&&te.dataset.tile==='photo'&&(te.style.background||'').match(/img\/([0-9a-f]{10})/);PINPHOTO=(te&&te.dataset.bg)||(m?m[1]:null);run('go:detail');}else flashHint();});
   wrap.addEventListener('wheel',e=>{e.preventDefault();stop();
     if(e.ctrlKey){const [mx,my]=devPt(e);zoomAt(Math.max(PAN_MIN*.85,Math.min(1.08,zs*Math.exp(-e.deltaY*.008))),mx,my);clearTimeout(wrap._zt);wrap._zt=setTimeout(settleZoom,180);}
     else{panBy(-e.deltaX,-e.deltaY);place();}},{passive:false});
