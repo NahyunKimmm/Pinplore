@@ -914,7 +914,10 @@ function node(n,parent,ox=0,oy=0){
 
 /* Infinite 2D canvas (blind view): the column pattern repeats horizontally, each column wraps vertically,
    so dragging never hits an edge. Own pointer handling with inertia; only on-screen copies are displayed. */
-const PANPOS={x:0,y:0,s:1};const PAN_MIN=1/1.556; // default = most zoomed in; pinch in to see more (Figma 46 -> 45)
+const PANPOS={x:0,y:0,s:1,bx:0,by:0};
+/* zoom value v: 1 = dense canvas (default, closest). Pinching in crossfades (v 0.85→0.75) into the GROUP BOARD:
+   each group = representative photo + tilted photo + 3 memos (Figma 46 at v=0.75, Figma 45 at v=0.75/1.556). */
+const ZT1=0.85,ZT0=0.75,GK=1.556/ZT0,PAN_MIN=ZT0/1.556;
 function buildPan(n,cv,name){
   const [x,y,w,h,css,kids]=n;
   const cols=kids.map(k=>{const t0=(k[5][0]||[0])[0];return {n:k,bx:x+k[0],by:y+k[1],vx:x+k[0]+t0};}).sort((a,b)=>a.bx-b.bx);
@@ -938,13 +941,46 @@ function buildPan(n,cv,name){
       inst.push({c,i,Pc,cw,copies});}
   });
   const mod=(a,m)=>((a%m)+m)%m;
-  let ox=PANPOS.x,oy=PANPOS.y;
+  let ox=PANPOS.x,oy=PANPOS.y,bx=PANPOS.bx,by=PANPOS.by;
   let zs=PANPOS.s;
   const WH=()=>parseFloat(wrap.style.height)||932, CX=215, CY=()=>WH()/2;
+  // ---- group board (infinite staggered lattice of groups, Figma 45/46 composition) ----
+  const board=document.createElement('div');board.style.cssText='left:0;top:0;width:430px;height:100%;opacity:0;visibility:hidden';wrap.appendChild(board);
+  const bl=document.createElement('div');bl.style.cssText='left:0;top:0;width:0;height:0;transform-origin:0 0;will-change:transform';board.appendChild(bl);
+  const allT=cols.flatMap(c=>c.n[5]),memoT=h=>allT.find(t=>t[5].length&&Math.abs(t[3]-h)<.6);
+  const MH=memoT(69),MM=memoT(54),MI=memoT(87);
+  const GPX=480,GPY=560,cells=new Map();
+  const hashc=(i,j)=>{let h=(i*73856093)^(j*19349663);h=(h^(h>>>13))*1274126177;return Math.abs(h^(h>>>16));};
+  function memo(tpl,x,y,txt,lines,g,pin){if(!tpl)return;node([x,y,...tpl.slice(2)],g);const el=g.lastChild;el.dataset.tile='memo';el.dataset.pin=pin;
+    const bl2='blur(9px) saturate(1.6)';el.style.backdropFilter=bl2;el.style.webkitBackdropFilter=bl2;
+    el.style.boxShadow=(el.style.boxShadow?el.style.boxShadow+',':'')+'inset 2px 2px 2px -1px rgba(255,255,255,.44),inset -2px -2px 2px -1px rgba(255,255,255,.18)';
+    const p=el.querySelector('.t p');if(p){p.textContent=txt;p.style.cssText=`display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:${lines};overflow:hidden`;}}
+  function photo(g,x,y,w,h,img,rot,pin){const d=document.createElement('div');
+    d.style.cssText=`left:${x}px;top:${y}px;width:${w}px;height:${h}px;border-radius:6.9px;overflow:hidden;background:${IMGX(img)} center/cover no-repeat,#fff;box-shadow:0 6px 24px rgba(0,0,0,.12)`+(rot?`;transform-origin:0 0;transform:rotate(${rot}deg)`:'');
+    d.dataset.tile='photo';d.dataset.pin=pin;g.appendChild(d);}
+  function makeGroup(i,j){const k=hashc(i,j)%PINS.length,P=PINS[k],Q=PINS[(k+5)%PINS.length],ph=P[8];
+    const g=document.createElement('div');g.style.cssText='left:0;top:0;width:0;height:0;will-change:transform';
+    const flip=(i+j)&1,keep=REG;REG=[];
+    photo(g,132,346,171,234,ph[0],0,k);photo(g,flip?50:268,flip?440:429,114,156,ph[1%ph.length],flip?-12:15,k);
+    memo(MH,35+(flip?150:0),369,P[3],1,g,k);memo(MM,58+(flip?120:0),502,SONGS[P[6]%SONGS.length],1,g,k);memo(MI,189-(flip?150:0),679,Q[3],2,g,(k+5)%PINS.length);
+    REG=keep;bl.appendChild(g);return g;}
+  function renderBoard(g){const cy=CY();
+    bl.style.transform=`translate(${(CX*(1-g)).toFixed(2)}px,${(cy*(1-g)).toFixed(2)}px) scale(${g.toFixed(4)})`;
+    const x0=CX-CX/g-bx,x1=CX+(430-CX)/g-bx,y0=cy-cy/g-by,y1=cy+(WH()-cy)/g-by,need=new Set();
+    for(let j=Math.floor((y0-820)/GPY);j<=Math.ceil((y1-300)/GPY);j++){const sx=(j&1)*GPX/2;
+      for(let i=Math.floor((x0-420-sx)/GPX);i<=Math.ceil((x1+60-sx)/GPX);i++){const key=i+','+j;need.add(key);
+        let el=cells.get(key);if(!el){el=makeGroup(i,j);cells.set(key,el);}
+        el.style.transform=`translate3d(${(i*GPX+sx+bx).toFixed(1)}px,${(j*GPY+by).toFixed(1)}px,0)`;}}
+    for(const [key,el] of cells)if(!need.has(key)){el.remove();cells.delete(key);}}
   function place(){
-    PANPOS.x=ox;PANPOS.y=oy;PANPOS.s=zs;
-    const cy=CY();layer.style.transform=zs===1?'':`translate(${(CX*(1-zs)).toFixed(2)}px,${(cy*(1-zs)).toFixed(2)}px) scale(${zs.toFixed(4)})`;
-    const x0=CX-CX/zs-20,x1=CX+CX/zs+20,y0=cy-cy/zs-20,y1=cy+(WH()-cy)/zs+20;
+    PANPOS.x=ox;PANPOS.y=oy;PANPOS.s=zs;PANPOS.bx=bx;PANPOS.by=by;
+    const a=Math.min(1,Math.max(0,(zs-ZT0)/(ZT1-ZT0)));      // 1 = dense canvas only, 0 = group board only
+    layer0.style.opacity=a;layer0.style.visibility=a>0?'':'hidden';board.style.opacity=1-a;board.style.visibility=a<1?'':'hidden';
+    board.style.pointerEvents=a<.5?'auto':'none';layer0.style.pointerEvents=a<.5?'none':'';
+    if(a<1)renderBoard(GK*zs);
+    if(a<=0)return;
+    const sb=Math.max(zs,ZT0),cy=CY();layer.style.transform=sb===1?'':`translate(${(CX*(1-sb)).toFixed(2)}px,${(cy*(1-sb)).toFixed(2)}px) scale(${sb.toFixed(4)})`;
+    const x0=CX-CX/sb-20,x1=CX+CX/sb+20,y0=cy-cy/sb-20,y1=cy+(WH()-cy)/sb+20;
     for(const I of inst){const X=I.c.bx+I.i*P+mod(ox,P)-P;const vis=X+I.cw>x0&&X<x1;
       const Y0=mod(I.c.by+oy,I.Pc)-2*I.Pc;
       I.copies.forEach((st,j)=>{const Y=Y0+j*I.Pc;const on=vis&&Y+I.Pc>y0&&Y<y1;
@@ -954,15 +990,16 @@ function buildPan(n,cv,name){
   // drag + inertia, tap / long-press
   let sx,sy,lx,ly,lt,vx=0,vy=0,moved=false,down=false,lp=null,tileEl=null,raf=0;
   const stop=()=>{cancelAnimationFrame(raf);raf=0;};
-  function glide(){vx*=0.95;vy*=0.95;ox+=vx;oy+=vy;place();if(Math.abs(vx)+Math.abs(vy)>0.2)raf=requestAnimationFrame(glide);else raf=0;}
-  wrap.addEventListener('pointerdown',e=>{const wasGliding=!!raf;stop();down=true;moved=wasGliding;sx=lx=e.clientX;sy=ly=e.clientY;lt=performance.now();vx=vy=0;
+  function panBy(dx,dy){ox+=dx/Math.max(zs,ZT0);oy+=dy/Math.max(zs,ZT0);bx+=dx/(GK*zs);by+=dy/(GK*zs);}
+  function glide(){vx*=0.95;vy*=0.95;panBy(vx,vy);place();if(Math.abs(vx)+Math.abs(vy)>0.2)raf=requestAnimationFrame(glide);else raf=0;}
+  wrap.addEventListener('pointerdown',e=>{if(pinch||pts.size>1){clearTimeout(lp);return;}const wasGliding=!!raf;stop();down=true;moved=wasGliding;sx=lx=e.clientX;sy=ly=e.clientY;lt=performance.now();vx=vy=0;
     tileEl=e.target.closest('[data-tile]');clearTimeout(lp);
     if(tileEl&&tileEl.dataset.tile==='photo'&&!moved)lp=setTimeout(()=>{if(!moved){down=false;PIN=tileEl.dataset.pin;if(typeof bookmarkDrag==='function')bookmarkDrag(tileEl,lx,ly);else run('go:bm1');}},480);
     try{wrap.setPointerCapture(e.pointerId);}catch(_){}});
-  wrap.addEventListener('pointermove',e=>{if(!down||pinch)return;const s=(SCALE||1)*zs;
+  wrap.addEventListener('pointermove',e=>{if(!down||pinch)return;const s=(SCALE||1);
     if(Math.abs(e.clientX-sx)+Math.abs(e.clientY-sy)>6){moved=true;clearTimeout(lp);}
     if(!moved)return;const now=performance.now(),dt=Math.max(1,now-lt);
-    const dx=(e.clientX-lx)/s,dy=(e.clientY-ly)/s;ox+=dx;oy+=dy;place();
+    const dx=(e.clientX-lx)/s,dy=(e.clientY-ly)/s;panBy(dx,dy);place();
     vx=vx*0.2+dx*(16/dt)*0.8;vy=vy*0.2+dy*(16/dt)*0.8;lx=e.clientX;ly=e.clientY;lt=now;});
   wrap.addEventListener('pointerup',e=>{clearTimeout(lp);if(!down)return;down=false;
     if(moved){if(performance.now()-lt<80&&Math.abs(vx)+Math.abs(vy)>0.5)raf=requestAnimationFrame(glide);}
@@ -970,21 +1007,23 @@ function buildPan(n,cv,name){
   wrap.addEventListener('pointercancel',()=>{clearTimeout(lp);down=false;moved=true;});
   wrap.addEventListener('click',e=>{e.stopPropagation();if(moved)return;const t=wrap._tap;wrap._tap=null;if(t){PIN=t;PINSTACK=null;const te=wrap._tapEl;const m=te&&te.dataset.tile==='photo'&&(te.style.background||'').match(/img\/([0-9a-f]{10})/);PINPHOTO=m?m[1]:null;run('go:detail');}else flashHint();});
   wrap.addEventListener('wheel',e=>{e.preventDefault();stop();
-    if(e.ctrlKey){const [mx,my]=devPt(e);zoomAt(Math.max(PAN_MIN*.85,Math.min(1.08,zs*Math.exp(-e.deltaY*.012))),mx,my);clearTimeout(wrap._zt);wrap._zt=setTimeout(settleZoom,180);}
-    else{ox-=e.deltaX/zs;oy-=e.deltaY/zs;place();}},{passive:false});
+    if(e.ctrlKey){const [mx,my]=devPt(e);zoomAt(Math.max(PAN_MIN*.85,Math.min(1.08,zs*Math.exp(-e.deltaY*.008))),mx,my);clearTimeout(wrap._zt);wrap._zt=setTimeout(settleZoom,180);}
+    else{panBy(-e.deltaX,-e.deltaY);place();}},{passive:false});
   // pinch to zoom out (and back in up to the default size); the point between the fingers stays put
-  function zoomAt(s,mx,my){const cy=CY();const wx=CX+(mx-CX)/zs-ox,wy=cy+(my-cy)/zs-oy;zs=s;ox=CX+(mx-CX)/zs-wx;oy=cy+(my-cy)/zs-wy;place();}
+  function zoomAt(s,mx,my){const cy=CY(),sb0=Math.max(zs,ZT0),sb1=Math.max(s,ZT0),g0=GK*zs,g1=GK*s;
+    const wx=CX+(mx-CX)/sb0-ox,wy=cy+(my-cy)/sb0-oy,qx=CX+(mx-CX)/g0-bx,qy=cy+(my-cy)/g0-by;
+    zs=s;ox=CX+(mx-CX)/sb1-wx;oy=cy+(my-cy)/sb1-wy;bx=CX+(mx-CX)/g1-qx;by=cy+(my-cy)/g1-qy;place();}
   let zanim=0;
   function zoomTo(s,mx,my,dur=320){cancelAnimationFrame(zanim);const s0=zs,t0=performance.now();
     (function f(now){const k=Math.min(1,(now-t0)/dur),e=1-Math.pow(1-k,3);zoomAt(s0+(s-s0)*e,mx,my);if(k<1)zanim=requestAnimationFrame(f);})(t0);}
-  function settleZoom(){const t=Math.min(1,Math.max(PAN_MIN,zs));if(Math.abs(t-zs)>.001)zoomTo(t,CX,CY());}
+  function settleZoom(){let t=Math.min(1,Math.max(PAN_MIN,zs));if(t>ZT0&&t<1)t=t>(ZT0+ZT1)/2?1:ZT0;if(Math.abs(t-zs)>.001)zoomTo(t,CX,CY());}
   const pts=new Map();let pinch=null;
   wrap.addEventListener('pointerdown',e=>{pts.set(e.pointerId,devPt(e));
-    if(pts.size===2){clearTimeout(lp);stop();moved=true;const [a,b]=[...pts.values()];pinch={d:Math.hypot(a[0]-b[0],a[1]-b[1]),s:zs,m:[(a[0]+b[0])/2,(a[1]+b[1])/2],ox,oy};}},true);
+    if(pts.size===2){clearTimeout(lp);stop();moved=true;const [a,b]=[...pts.values()];pinch={d:Math.hypot(a[0]-b[0],a[1]-b[1]),s:zs,m:[(a[0]+b[0])/2,(a[1]+b[1])/2],ox,oy,bx,by};}},true);
   wrap.addEventListener('pointermove',e=>{if(!pts.has(e.pointerId))return;pts.set(e.pointerId,devPt(e));if(!pinch||pts.size<2)return;
     const [a,b]=[...pts.values()];const d=Math.hypot(a[0]-b[0],a[1]-b[1]),m=[(a[0]+b[0])/2,(a[1]+b[1])/2];
     let s=pinch.s*d/pinch.d;if(s>1)s=1+(s-1)*.3;if(s<PAN_MIN)s=PAN_MIN-(PAN_MIN-s)*.3;
-    zs=pinch.s;ox=pinch.ox;oy=pinch.oy;zoomAt(s,pinch.m[0],pinch.m[1]);ox+=(m[0]-pinch.m[0])/zs;oy+=(m[1]-pinch.m[1])/zs;place();},true);
+    zs=pinch.s;ox=pinch.ox;oy=pinch.oy;bx=pinch.bx;by=pinch.by;zoomAt(s,pinch.m[0],pinch.m[1]);panBy(m[0]-pinch.m[0],m[1]-pinch.m[1]);place();},true);
   const pend=e=>{pts.delete(e.pointerId);if(pinch&&pts.size<2){pinch=null;down=false;settleZoom();}};
   wrap.addEventListener('pointerup',pend,true);wrap.addEventListener('pointercancel',pend,true);
   ['gesturestart','gesturechange','gestureend'].forEach(ev=>wrap.addEventListener(ev,e=>e.preventDefault(),{passive:false}));
