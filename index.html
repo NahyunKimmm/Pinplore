@@ -1017,15 +1017,16 @@ function buildPan(n,cv,name){
   const bl=document.createElement('div');bl.style.cssText='left:0;top:0;width:0;height:0;transform-origin:0 0;will-change:transform';board.appendChild(bl);
   const allT=cols.flatMap(c=>c.n[5]),memoT=h=>allT.find(t=>t[5].length&&Math.abs(t[3]-h)<.6);
   const MH=memoT(69),MM=memoT(54),MI=memoT(87);
-  const GPX=480,GPY=560,cells=new Map();
+  const GPX=490,GPY=575,cells=new Map();let SPREAD=1;
   const hashc=(i,j)=>{let h=(i*73856093)^(j*19349663);h=(h^(h>>>13))*1274126177;return Math.abs(h^(h>>>16));};
   function memo(tpl,x,y,txt,lines,g,pin){if(!tpl)return;node([x,y,...tpl.slice(2)],g);const el=g.lastChild;el.dataset.tile='memo';el.dataset.pin=pin;
     const bl2='blur(9px) saturate(1.6)';el.style.backdropFilter=bl2;el.style.webkitBackdropFilter=bl2;
     el.style.boxShadow=(el.style.boxShadow?el.style.boxShadow+',':'')+'inset 2px 2px 2px -1px rgba(255,255,255,.44),inset -2px -2px 2px -1px rgba(255,255,255,.18)';
     const p=el.querySelector('.t p');if(p){p.textContent=txt;p.style.cssText=`display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:${lines};overflow:hidden`;}}
-  function photo(g,x,y,w,h,img,rot,pin){const d=document.createElement('div');
-    d.style.cssText=`left:${x}px;top:${y}px;width:${w}px;height:${h}px;border-radius:6.9px;overflow:hidden;background:${IMGX(img)} center/cover no-repeat,#fff;box-shadow:0 6px 24px rgba(0,0,0,.12)`+(rot?`;transform-origin:0 0;transform:rotate(${rot}deg)`:'');
-    d.dataset.tile='photo';d.dataset.pin=pin;g.appendChild(d);}
+  function photo(g,x,y,w,h,img,rot,pin,small){const d=document.createElement('div');
+    d.style.cssText=`left:${x}px;top:${y}px;width:${w}px;height:${h}px;border-radius:${small?5:6.9}px;overflow:hidden;background:${IMGX(img)} center/cover no-repeat,#fff;transform-origin:50% 50%;`+
+      `box-shadow:0 ${small?6:14}px ${small?16:34}px rgba(20,30,60,${small?.14:.2}),0 2px 6px rgba(20,30,60,.08)`;
+    d._rot=rot||0;d.dataset.tile='photo';d.dataset.pin=pin;g.appendChild(d);return d;}
   // the canvas region a group stands for: board point q <-> canvas world point GK*(q-C)+C-K (K is invariant under pan/zoom)
   const K0=[PANPOS.x-GK*PANPOS.bx,PANPOS.y-GK*PANPOS.by];
   const tileHash=t=>((t[4].match(/img\/([0-9a-f]{10})/)||[])[1]);
@@ -1036,23 +1037,46 @@ function buildPan(n,cv,name){
         for(let dm=-1;dm<=1;dm++){const m=Math.round((wy-c.by-ch/2)/Pc)+dm;
           tiles.forEach((tl,ti)=>{const tx=X+tl[0]+tl[2]/2,ty=c.by+m*Pc+tl[1]+tl[3]/2;out.push({tl,ci,n,m,ti,d:Math.hypot(tx-wx,(ty-wy)*.8)});});}}});
     return out.sort((a,b)=>a.d-b.d);}
+  // three hand-placed layouts (Figma 45 scale; group centre ≈ 210,500): [kind, x, y, w, h, rot]
+  const LAYOUTS=[
+    [['peek',300,286,92,122,11],['main',132,346,171,234,-1.5],['second',268,429,114,156,14],['heart',35,369,0,0,-2.5],['music',58,502,0,0,1.5],['idea',189,679,0,0,-1.5]],
+    [['peek',58,318,96,128,-12],['second',214,330,138,186,7],['main',92,372,166,224,-5],['heart',236,556,0,0,3],['music',222,658,0,0,-2],['idea',36,626,0,0,2]],
+    [['peek',270,640,100,130,9],['main',40,350,180,246,-3],['second',150,520,120,160,-9],['heart',236,372,0,0,2.5],['music',244,456,0,0,-1.5],['idea',236,526,0,0,1.5]]];
   function makeGroup(i,j){const sx=(j&1)*GPX/2,qx=i*GPX+sx+209.4,qy=j*GPY+486,cy=CY();
     const wx=GK*(qx-CX)+CX-K0[0],wy=GK*(qy-cy)+cy-K0[1];
     const R=regionTiles(wx,wy),p1=R.find(r=>!r.tl[5].length);
-    const k=pinFor(p1.ci,p1.n,p1.m,p1.ti),P0=PINS[k],main=photoFor(k,p1.ti,p1.n,p1.m),other=P0[8].find(h=>h!==main)||main;
-    const nts=P0[12],a0=hh(i,j)%nts.length;
+    const k=pinFor(p1.ci,p1.n,p1.m,p1.ti),P0=PINS[k],main=photoFor(k,p1.ti,p1.n,p1.m),rest=P0[8].filter(h=>h!==main);
+    const other=rest[0]||main,peek=PINS[(k+7)%NP][8][0];
+    const nts=P0[12],a0=hh(i,j)%nts.length,L=LAYOUTS[mod(i*2+j,3)];
     const g=document.createElement('div');g.style.cssText='left:0;top:0;width:0;height:0;will-change:transform';
-    const flip=(i+j)&1,keep=REG;REG=[];
-    photo(g,132,346,171,234,main,0,k);photo(g,flip?50:268,flip?440:429,114,156,other,flip?-12:15,k);
-    memo(MH,35+(flip?150:0),369,nts[a0],1,g,k);memo(MM,58+(flip?120:0),502,SONGS[P0[6]%SONGS.length],1,g,k);memo(MI,189-(flip?150:0),679,nts[(a0+1)%nts.length],2,g,k);
-    REG=keep;bl.appendChild(g);return g;}
+    g._jx=(hh(i,j,1)%41)-20;g._jy=(hh(j,i,2)%41)-20;
+    const keep=REG;REG=[];const cards=[];
+    for(const [kind,x,y,w,h,rot] of L){let el=null;
+      if(kind==='peek')el=photo(g,x,y,w,h,peek,rot,(k+7)%NP,true);
+      else if(kind==='main')el=photo(g,x,y,w,h,main,rot,k);
+      else if(kind==='second')el=photo(g,x,y,w,h,other,rot,k);
+      else{const tpl=kind==='heart'?MH:kind==='music'?MM:MI;const txt=kind==='heart'?nts[a0]:kind==='music'?SONGS[P0[6]%SONGS.length]:nts[(a0+1)%nts.length];
+        memo(tpl,x,y,txt,kind==='idea'?2:1,g,k);el=g.lastChild;el._rot=rot;el.style.transformOrigin='50% 50%';}
+      if(el){el._cx=x+(parseFloat(el.style.width)||w)/2;el._cy=y+(parseFloat(el.style.height)||h)/2;cards.push(el);}}
+    // area chip
+    const chip=document.createElement('div');chip.className='gchip';
+    chip.style.cssText='left:'+(L===LAYOUTS[2]?40:120)+'px;top:'+(L===LAYOUTS[1]?280:300)+'px;height:26px;padding:0 11px 0 8px;display:flex;align-items:center;gap:5px;border-radius:13px;'+
+      'background:rgba(255,255,255,.72);backdrop-filter:blur(10px) saturate(1.5);-webkit-backdrop-filter:blur(10px) saturate(1.5);box-shadow:inset 1px 1px 1px -.5px rgba(255,255,255,.9),0 4px 14px rgba(20,30,60,.1);'+
+      "font:700 11px/1 Manrope,sans-serif;color:#1c1c1c;white-space:nowrap;letter-spacing:-.01em";
+    chip.innerHTML='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" style="position:static"><path d="M12 21s7-6.2 7-11.5A7 7 0 0 0 5 9.5C5 14.8 12 21 12 21Z" fill="#6babff"/><circle cx="12" cy="9.5" r="2.6" fill="#fff"/></svg>'+P0[0];
+    chip._rot=0;chip._cx=170;chip._cy=313;g.appendChild(chip);cards.push(chip);
+    g._cards=cards;g._t=-1;REG=keep;bl.appendChild(g);return g;}
+  // cards start piled in the middle of their group and fan out as the board takes over
+  function spread(g,t){if(Math.abs(g._t-t)<.004)return;g._t=t;const e=1-Math.pow(1-t,3);
+    for(const c of g._cards){const dx=(210-c._cx)*(1-e),dy=(500-c._cy)*(1-e);
+      c.style.transform=`translate(${dx.toFixed(1)}px,${dy.toFixed(1)}px) rotate(${(c._rot*(0.3+0.7*e)).toFixed(2)}deg) scale(${(0.86+0.14*e).toFixed(3)})`;}}
   function renderBoard(g){const cy=CY();
     bl.style.transform=`translate(${(CX*(1-g)).toFixed(2)}px,${(cy*(1-g)).toFixed(2)}px) scale(${g.toFixed(4)})`;
     const x0=CX-CX/g-bx,x1=CX+(430-CX)/g-bx,y0=cy-cy/g-by,y1=cy+(WH()-cy)/g-by,need=new Set();
     for(let j=Math.floor((y0-820)/GPY);j<=Math.ceil((y1-300)/GPY);j++){const sx=(j&1)*GPX/2;
       for(let i=Math.floor((x0-420-sx)/GPX);i<=Math.ceil((x1+60-sx)/GPX);i++){const key=i+','+j;need.add(key);
         let el=cells.get(key);if(!el){el=makeGroup(i,j);cells.set(key,el);}
-        el.style.transform=`translate3d(${(i*GPX+sx+bx).toFixed(1)}px,${(j*GPY+by).toFixed(1)}px,0)`;}}
+        el.style.transform=`translate3d(${(i*GPX+sx+bx+el._jx).toFixed(1)}px,${(j*GPY+by+el._jy).toFixed(1)}px,0)`;spread(el,SPREAD);}}
     for(const [key,el] of cells)if(!need.has(key)){el.remove();cells.delete(key);}}
   function place(){
     PANPOS.x=ox;PANPOS.y=oy;PANPOS.s=zs;PANPOS.bx=bx;PANPOS.by=by;
@@ -1061,6 +1085,7 @@ function buildPan(n,cv,name){
     board.style.pointerEvents=a<.5?'auto':'none';layer0.style.pointerEvents=a<.5?'none':'';
     const cur=[...cv.children].filter(e=>e.style&&e.style.left==='396px'||(e.dataset&&/curation/.test(e.dataset.act||'')));
     cur.forEach(e=>{e.style.transition='opacity .2s';e.style.opacity=a;if(e.classList.contains('hs'))e.style.display=a<.5?'none':'';else e.style.pointerEvents=a<.5?'none':'';});
+    SPREAD=Math.min(1,Math.max(0,(ZT1-zs)/(ZT1-ZT0+.04)));
     if(a<1)renderBoard(GK*zs);
     if(a<=0)return;
     const sb=Math.max(zs,ZT0),cy=CY();layer.style.transform=sb===1?'':`translate(${(CX*(1-sb)).toFixed(2)}px,${(cy*(1-sb)).toFixed(2)}px) scale(${sb.toFixed(4)})`;
