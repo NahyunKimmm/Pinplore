@@ -1017,24 +1017,49 @@ function buildPan(n,cv,name){
     const tx=c.querySelector('.t');if(tx){const lines=Math.max(1,Math.floor((h-46)/17));tx.style.height=(lines*17+2)+'px';
       const p=tx.querySelector('p');p.textContent=text;p.style.cssText=`display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:${lines};overflow:hidden`;}
     return c;}
-  function skin(st,ci,n,m){const key=n+','+m;if(st._key===key)return;st._key=key;const tiles=base[ci].n[5];
-    [...st.children].forEach((el,ti)=>{const tl=tiles[ti];if(!tl)return;const k=pinFor(ci,n,m,ti);el.dataset.pin=String(k);
+  // neighbours in the same column (tile directly above / below), used to absorb the space a hugging memo frees
+  const NB={};const nbOf=ci=>NB[ci]||(NB[ci]=base[ci].n[5].map((a,i,T)=>{let up=-1,dn=-1,bu=1e9,bd=1e9;
+    T.forEach((b,j)=>{if(j===i||Math.abs(b[0]-a[0])>1)return;const g1=a[1]-(b[1]+b[3]),g2=b[1]-(a[1]+a[3]);
+      if(g1>=-1&&g1<bu){bu=g1;up=j;}if(g2>=-1&&g2<bd){bd=g2;dn=j;}});return [up,dn];}));
+  function skin(st,ci,n,m){const key=n+','+m;if(st._key===key)return;st._key=key;const tiles=base[ci].n[5];const kids=[...st.children];
+    const rr=ti=>hh(ci,n,m,ti,7)%100, short=ti=>{const t=tiles[ti];return t&&!t[5].length&&rr(ti)<40&&t[3]<190;};
+    const fixes=[];
+    kids.forEach((el,ti)=>{const tl=tiles[ti];if(!tl)return;const k=pinFor(ci,n,m,ti);el.dataset.pin=String(k);
       if(!tl[5].length){
-        if(el._bg0==null)el._bg0=el.style.background;
+        if(el._bg0==null){el._bg0=el.style.background;el._t0=parseFloat(el.style.top);el._h0=parseFloat(el.style.height);}
         el.querySelectorAll(':scope>.mz,:scope>.mzp').forEach(x=>x.remove());el.style.background=el._bg0;el.style.overflow='';el._ph=null;el._pk=k;
+        el.style.top=el._t0+'px';el.style.height=el._h0+'px';el._mc=null;
         const img=photoFor(k,ti,n,m);el.dataset.bg=img;el.dataset.tile='photo';
-        const w=tl[2],h=tl[3],r=hh(ci,n,m,ti,7)%100;
+        const w=tl[2],h=tl[3],r=rr(ti);
         if(r<40){                               // ~40% of photo tiles carry a memo so notes are spread evenly
           if(h>=190){                           // tall: photo on top, memo below
             el.style.background='none';el.style.overflow='visible';
             const ph=document.createElement('div');ph.className='mzp';el._ph=ph;ph.style.cssText=`left:0;top:0;width:${w}px;height:${h-84}px;border-radius:5px;background:${IMGX(img)} center/cover no-repeat`;
-            const mc=memoCard(k,w,69,noteFor(k,ti+1,n,m),r);if(mc){mc.style.top=(h-69)+'px';el.append(ph,mc);}else el.append(ph);
-          }else{                                // short: the tile becomes a memo card
-            const lines=Math.max(1,Math.floor((h-46)/17)),mc=memoCard(k,w,h,lines>=3?PINS[k][3]+'. '+PINS[k][4]:lines===2?PINS[k][3]:noteFor(k,ti+1,n,m),r);
-            if(mc){el.style.background='none';el.style.overflow='visible';el.dataset.tile='memo';el.appendChild(mc);}else setImg(el,img);}
+            const mc=memoCard(k,w,69,noteFor(k,ti+1,n,m),r);if(mc){mc.style.top=(h-69)+'px';el._mc=mc;el.append(ph,mc);}else el.append(ph);
+          }else{                                // short: the tile becomes a memo card that hugs its text (max 2 lines)
+            const L=Math.min(2,Math.max(1,Math.floor((h-46)/17)));
+            const mc=memoCard(k,w,h,L===2?PINS[k][3]+'. '+PINS[k][4]:noteFor(k,ti+1,n,m),r);
+            if(mc){el.style.background='none';el.style.overflow='visible';el.dataset.tile='memo';el.appendChild(mc);
+              const tx=mc.querySelector('.t'),p=tx&&tx.querySelector('p');
+              if(p){const lh=parseFloat(getComputedStyle(p).lineHeight)||17;p.style.webkitLineClamp='';p.style.display='block';
+                const nl=Math.min(L,Math.max(1,Math.round(p.scrollHeight/lh)));
+                p.style.display='-webkit-box';p.style.webkitLineClamp=String(nl);tx.style.height=(nl*lh+2)+'px';
+                const Hc=Math.round(52+nl*lh);if(Hc<h-1){mc.style.height=Hc+'px';fixes.push([ti,h-Hc]);}}
+            }else setImg(el,img);}
         }else setImg(el,img);
         return;}
-      const p=el.querySelector('.t p');if(!p)return;p.textContent=isMusic(tl)?SONGS[PINS[k][6]%SONGS.length]:noteFor(k,ti,n,m);});}
+      const p=el.querySelector('.t p');if(!p)return;if(isMusic(tl)){p.textContent=SONGS[PINS[k][6]%SONGS.length];return;}
+      const tx=p.closest('.t'),two=parseFloat(tx.style.height)>=30;   // Figma memo boxes drawn for 2 lines get text that fills both
+      p.textContent=two?PINS[k][3]+'. '+PINS[k][4]:noteFor(k,ti,n,m);
+      if(two)p.style.cssText+=';display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden';});
+    // give the freed space to the photo below (or above) so the column keeps even gaps
+    const grow=(j,dTop,d)=>{const e=kids[j];e.style.top=(parseFloat(e.style.top)+dTop)+'px';const H=parseFloat(e.style.height)+d;e.style.height=H+'px';
+      if(e._ph)e._ph.style.height=(H-84)+'px';if(e._mc)e._mc.style.top=(H-69)+'px';};
+    const okPhoto=j=>j>=0&&tiles[j]&&!tiles[j][5].length&&!short(j);
+    for(const [ti,d] of fixes){const el=kids[ti];el.style.height=(el._h0-d)+'px';const [up,dn]=nbOf(ci)[ti];
+      if(okPhoto(dn))grow(dn,-d,d);
+      else if(okPhoto(up)){grow(up,0,d);el.style.top=(el._t0+d)+'px';}
+      else el.style.top=(el._t0+d/2)+'px';}}
   let ox=PANPOS.x,oy=PANPOS.y,bx=PANPOS.bx,by=PANPOS.by;
   let zs=PANPOS.s;
   const WH=()=>parseFloat(wrap.style.height)||932, CX=215, CY=()=>WH()/2;
