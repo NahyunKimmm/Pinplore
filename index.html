@@ -261,6 +261,32 @@ function fillMock(root,name){
   try{fillCards(root,name);if(name==='detail'||name==='arMemo')fillDetail(root);fixChipIcons(root);ellipsize(root);}catch(e){console.warn(e);}
 }
 
+/* Zoomed-out groups: each group = a representative photo + a related photo, with memos that describe them */
+const GROUPS=[
+ ['0b644ddc41','545a1c9ce2','Quiet hour in the library','A stone archway that opens onto a hidden courtyard'],
+ ['0fe7bb1359','2b2b99f6e8','Ferris wheel at sunset','Ride at dusk — the cabins glow over the harbor'],
+ ['4ed3044cd8','94041cdcb7','Riverside picnic','Locals bring mats and snacks every weekend'],
+ ['1688c4fc5a','4e65203b4f','Morning in the alley','Side streets glowing right after sunrise'],
+ ['38ebd72ae2','9f1b6664c4','The little green tram','Take the sky rail for a view over the city'],
+ ['91aa61cb37','64f058d73d','Rock islands at low tide','Walk the sandbar out to the islets before the tide turns'],
+ ['202ccf3fd9','d7ee0d3ada','Kimbap from the market','Grilled skewers at the night market stalls'],
+ ['70b348d199','e920d4469d','A cove behind the rocks','Cliff path above the waves — wear good shoes'],
+ ['20a469d0ce','961bf908a4','Café with a resident cat','Old cameras and radios in a tiny vintage shop'],
+ ['c65d4c3169','b4b1b4edf7','Sun sinking into the sea','A long sandy beach made for sunset walks'],
+ ['b4c2f250c6','487bfbd009','Cherry blossoms in April','Pink trees in front of the old apartment blocks'],
+ ['f0e95ca852','77affa408d','Bridge lights after dark','Walk the white pier bridge out over the water'],
+ ['0c8819c4f1','98885f2348','Giant mural downtown','Bike lanes and murals along the old street'],
+ ['1b50b110ad','a5a2d6e0cf','Towel day at the beach','Warm sand and a cold drink by the shore'],
+ ['faacec153c','cdc89c0bcd','Window seat at dawn','Above the clouds on the first flight out'],
+ ['17b720ef5a','bd9920c026','Bread fresh from the oven','Brunch on a sunny terrace table'],
+ ['eb675ca414','c7df7c8215','Flea market by the tower','Scooters and shop signs in the old quarter'],
+ ['dfd38b8050','a16b611bcb','Iron bridge in the pines','Curving garden paths through the park'],
+ ['5cd8998942','2660c9318e','A ladybug said hello','Slow afternoon under the big park trees'],
+ ['d0deb24a76','7f832f70a5','Boat out to the islands','Cable cars gliding across the bay'],
+ ['3fd1cca8e7','31d41020e1','The tower from the street','Little shops along the uphill road'],
+ ['513cdcb47b','cdce2103d3','Golden hour on site','A hard hat resting in the late sun'],
+];
+
 /* ---------- Hand-built UI on top of the Figma screens: toggles, Ask AI overlay, new pages ---------- */
 (function injectCSS(){const st=document.createElement('style');st.textContent=`
 .scr .ui,.scr .ui div{position:relative;box-sizing:border-box}
@@ -958,11 +984,11 @@ function buildPan(n,cv,name){
   function photo(g,x,y,w,h,img,rot,pin){const d=document.createElement('div');
     d.style.cssText=`left:${x}px;top:${y}px;width:${w}px;height:${h}px;border-radius:6.9px;overflow:hidden;background:${IMGX(img)} center/cover no-repeat,#fff;box-shadow:0 6px 24px rgba(0,0,0,.12)`+(rot?`;transform-origin:0 0;transform:rotate(${rot}deg)`:'');
     d.dataset.tile='photo';d.dataset.pin=pin;g.appendChild(d);}
-  function makeGroup(i,j){const k=hashc(i,j)%PINS.length,P=PINS[k],Q=PINS[(k+5)%PINS.length],ph=P[8];
+  function makeGroup(i,j){const n=hashc(i,j)%GROUPS.length,G=GROUPS[n],k=n%PINS.length,song=SONGS[(n*3+1)%SONGS.length];
     const g=document.createElement('div');g.style.cssText='left:0;top:0;width:0;height:0;will-change:transform';
     const flip=(i+j)&1,keep=REG;REG=[];
-    photo(g,132,346,171,234,ph[0],0,k);photo(g,flip?50:268,flip?440:429,114,156,ph[1%ph.length],flip?-12:15,k);
-    memo(MH,35+(flip?150:0),369,P[3],1,g,k);memo(MM,58+(flip?120:0),502,SONGS[P[6]%SONGS.length],1,g,k);memo(MI,189-(flip?150:0),679,Q[3],2,g,(k+5)%PINS.length);
+    photo(g,132,346,171,234,G[0],0,k);photo(g,flip?50:268,flip?440:429,114,156,G[1],flip?-12:15,k);
+    memo(MH,35+(flip?150:0),369,G[2],1,g,k);memo(MM,58+(flip?120:0),502,song,1,g,k);memo(MI,189-(flip?150:0),679,G[3],2,g,k);
     REG=keep;bl.appendChild(g);return g;}
   function renderBoard(g){const cy=CY();
     bl.style.transform=`translate(${(CX*(1-g)).toFixed(2)}px,${(cy*(1-g)).toFixed(2)}px) scale(${g.toFixed(4)})`;
@@ -977,6 +1003,8 @@ function buildPan(n,cv,name){
     const a=Math.min(1,Math.max(0,(zs-ZT0)/(ZT1-ZT0)));      // 1 = dense canvas only, 0 = group board only
     layer0.style.opacity=a;layer0.style.visibility=a>0?'':'hidden';board.style.opacity=1-a;board.style.visibility=a<1?'':'hidden';
     board.style.pointerEvents=a<.5?'auto':'none';layer0.style.pointerEvents=a<.5?'none':'';
+    const cur=[...cv.children].filter(e=>e.style&&e.style.left==='396px'||(e.dataset&&/curation/.test(e.dataset.act||'')));
+    cur.forEach(e=>{e.style.transition='opacity .2s';e.style.opacity=a;if(e.classList.contains('hs'))e.style.display=a<.5?'none':'';else e.style.pointerEvents=a<.5?'none':'';});
     if(a<1)renderBoard(GK*zs);
     if(a<=0)return;
     const sb=Math.max(zs,ZT0),cy=CY();layer.style.transform=sb===1?'':`translate(${(CX*(1-sb)).toFixed(2)}px,${(cy*(1-sb)).toFixed(2)}px) scale(${sb.toFixed(4)})`;
