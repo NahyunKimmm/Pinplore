@@ -1126,7 +1126,15 @@ function buildPan(n,cv,name){
   let zanim=0;
   function zoomTo(s,mx,my,dur=320){cancelAnimationFrame(zanim);const s0=zs,t0=performance.now();
     (function f(now){const k=Math.min(1,(now-t0)/dur),e=1-Math.pow(1-k,3);zoomAt(s0+(s-s0)*e,mx,my);if(k<1)zanim=requestAnimationFrame(f);})(t0);}
-  function settleZoom(){let t=Math.min(1,Math.max(PAN_MIN,zs));if(t>ZT0&&t<1)t=t>(ZT0+ZT1)/2?1:ZT0;if(Math.abs(t-zs)>.001)zoomTo(t,CX,CY());}
+  // zoomed out: the group nearest the middle glides to the exact centre of the screen
+  function centreGroup(){const cy=CY(),q0x=CX-bx,q0y=cy-by;
+    const j=Math.round((q0y-515)/GPY),sx=(j&1)*GPX/2,i=Math.round((q0x-215-sx)/GPX);
+    const jx=(hh(i,j,1)%41)-20,jy=(hh(j,i,2)%41)-20;return [CX-(i*GPX+sx+jx+215),cy-(j*GPY+jy+515)];}
+  function settleZoom(){let t=Math.min(1,Math.max(PAN_MIN,zs));if(t>ZT0&&t<1)t=t>(ZT0+ZT1)/2?1:ZT0;
+    if(t>ZT0){if(Math.abs(t-zs)>.001)zoomTo(t,CX,CY());return;}
+    cancelAnimationFrame(zanim);const [tbx,tby]=centreGroup(),s0=zs,b0x=bx,b0y=by,Kx=ox-GK*bx,Ky=oy-GK*by,t0=performance.now(),dur=420;
+    (function f(now){const k=Math.min(1,(now-t0)/dur),e=1-Math.pow(1-k,3);
+      zs=s0+(t-s0)*e;bx=b0x+(tbx-b0x)*e;by=b0y+(tby-b0y)*e;ox=Kx+GK*bx;oy=Ky+GK*by;place();if(k<1)zanim=requestAnimationFrame(f);})(t0);}
   const pts=new Map();let pinch=null;
   wrap.addEventListener('pointerdown',e=>{pts.set(e.pointerId,devPt(e));
     if(pts.size===2){clearTimeout(lp);stop();moved=true;const [a,b]=[...pts.values()];pinch={d:Math.hypot(a[0]-b[0],a[1]-b[1]),s:zs,m:[(a[0]+b[0])/2,(a[1]+b[1])/2],ox,oy,bx,by};}},true);
