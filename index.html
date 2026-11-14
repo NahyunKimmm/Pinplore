@@ -639,10 +639,7 @@ const CUSTOM={
       h('div',{cls:'btn',style:'flex:1','data-act':'back|toast:Folder created'},'Create folder')));
     return root;},
   faiEdit(){const {root,cv,fx}=pageShell('faiEdit',{bg:'background:#f5f5f5'});
-    const BASE=[
-      ['Day 1','03.19 / Mon',[[8,'09:00','Jangsa Port'],[3,'10:30','Anmok café street'],[0,'12:00','Yeonggeumjeong Pavilion'],[13,'14:00','Seorak cable car'],[9,'16:30','Beach walk'],[12,'18:00','Harbor dinner']]],
-      ['Day 2','03.20 / Tue',[[7,'08:30','Sunrise peak'],[5,'11:00','Tomb park picnic'],[6,'14:30','Brick café'],[1,'19:00','Gwangan night view']]],
-      ['Day 3','03.21 / Wed',[[11,'10:00','Pastel village walk'],[2,'13:00','Mural lane'],[4,'16:00','Hanok lanterns']]]];
+    const BASE=ITIN.map(([dl,dd,l])=>[dl,dd.replace('/',' / '),l.map(x=>[x.k,x.t.split('-')[0],x.n])]);
     const days=BASE.map(d=>[d[0],d[1],d[2].map(x=>x.slice())]);
     const EXTRA=[[10,'Forest walk'],[3,'Seaside roastery'],[12,'Morning alleys'],[9,'Low-tide path']];let ei=0;
     cv.style.paddingBottom='150px';
@@ -687,6 +684,7 @@ for(const k of Object.keys(CUSTOM))SCREENS[k]={custom:1,h:932,bg:'background:#f5
    Collapsed --pull down at the top of the list--> Expanded.
    In the collapsed state the tab bar lives in the fixed layer, so it never shakes while the list scrolls. */
 function stickyFolder(root){
+  if(root.dataset.screen==='fai'&&typeof stickyFai==='function'){try{if(stickyFai(root))return;}catch(e){console.error(e);}}
   const sc=root.querySelector(':scope>.sc');const cv=sc&&sc.firstElementChild;if(!cv)return;
   const all=[...root.querySelectorAll('div')];
   const map=all.find(d=>d._abs&&Math.round(d._abs[2])===434&&Math.round(d._abs[3])===285);
@@ -836,6 +834,186 @@ setTimeout(function(){
   const end=e=>{if(st&&st.fired){e.stopPropagation();const kill=ev=>{ev.stopPropagation();ev.preventDefault();};device.addEventListener('click',kill,{capture:true,once:true});setTimeout(()=>device.removeEventListener('click',kill,true),400);}st=null;};
   device.addEventListener('pointerup',end,true);device.addEventListener('pointercancel',()=>{st=null;},true);
 },0);
+
+/* ---- AI Itinerary: Day 1–3 mock plan built from the Figma stop cards ---- */
+const ITIN=[
+ ['Day 1','03.19/Mon',[
+  {n:'Jangsa Port',k:8,j:0,ll:[128.5703,38.2335],t:'09:00-10:30',m:'Move 1.2 km',d:'A quiet harbor with a calm, clear beach beside it—spread out a mat and lie down to relax.',
+   pin:['A quiet harbor with a clear beach.','Fishing boats come in around noon and the beach beside the port is almost empty.']},
+  {n:'Anmok Café Street',k:3,j:0,ll:[128.5868,38.2236],t:'10:30-12:00',m:'Move 0.8 km',d:'Cafés line the beach road — grab a latte and watch the waves from a second-floor terrace.'},
+  {n:'Yeongnangho Lake',k:0,j:0,ll:[128.6003,38.2118],t:'12:30-14:00',m:'Move 1.5 km',d:'A flat 8 km loop around the lake with Seoraksan on the horizon. Rent a bike at the north gate.',
+   pin:['The sunset over the lake was breathtaking.','The pavilion steps face west — stay until the lights come on.']},
+  {n:'Sokcho Central Market',k:18,j:0,ll:[128.5906,38.2045],t:'14:30-16:00',m:'Move 0.6 km',d:'Dakgangjeong, squid sundae and market kimbap. The basement fish hall is the liveliest part.'},
+  {n:'Sokcho Eye & Beach',k:17,j:0,ll:[128.6010,38.1905],t:'17:00-19:00',m:'Move 0.9 km',d:'The Ferris wheel sits right on the sand. Ride it after sunset when the whole bay lights up.',
+   pin:['Fairground lights by the lake.','Old swing rides spin next to the Sokcho Eye — go after dark.']}]],
+ ['Day 2','03.20/Tue',[
+  {n:'Seorak Cable Car',k:13,j:0,ll:[128.4913,38.1730],t:'08:30-11:00',m:'Move 9.4 km',d:'Six minutes up to Gwongeumseong fortress. Go for the first car to beat the tour buses.',
+   pin:['Seorak cable car above the clouds.','The ride takes six minutes and the view from the granite peak is wild.']},
+  {n:'Sinheungsa Temple',k:4,j:1,ll:[128.4995,38.1725],t:'11:00-12:30',m:'Move 0.7 km',d:'A giant bronze Buddha at the foot of the park. The forest path behind it is quiet and shaded.'},
+  {n:'Daepo Port',k:8,j:1,ll:[128.6085,38.1752],t:'13:30-15:00',m:'Move 10.8 km',d:'Pick fish at the waterfront stalls and have it grilled upstairs. Shrimp tempura is the local snack.'},
+  {n:'Oeongchi Coastal Trail',k:9,j:0,ll:[128.6122,38.1840],t:'15:30-17:30',m:'Move 1.1 km',d:'A wooden deck along the rocks, closed to the public for decades. Easy 1.7 km walk.',
+   pin:['Two rocks and a low-tide path.','The deck hugs the cliffs — waves splash right under your feet.']}]],
+ ['Day 3','03.21/Wed',[
+  {n:'Abai Village Ferry',k:18,j:1,ll:[128.5975,38.2007],t:'09:30-11:00',m:'Move 2.4 km',d:'Pull yourself across the channel on the hand-drawn gaetbae ferry, then try abai sundae.',
+   pin:['A ferry you pull by hand.','The crossing takes a minute and costs 500 won. Kids love it.']},
+  {n:'Cheongchoho Lake Park',k:0,j:1,ll:[128.5868,38.1975],t:'11:30-13:00',m:'Move 0.9 km',d:'A lagoon park with a long boardwalk. Benches face the water and the expo tower.'},
+  {n:'Sokcho Expo Tower',k:17,j:1,ll:[128.5925,38.1938],t:'13:30-15:00',m:'Move 0.5 km',d:'Elevator up for a 360° view of the lake, the port and the sea in one look before heading home.'}]]];
+const ITIN_PH=s=>PINS[s.k][8][s.j%PINS[s.k][8].length];
+
+// clone a rendered Figma node and carry its device coordinates (_abs) over, shifted by dy
+function cloneAbs(src,dy){const c=src.cloneNode(true);(function walk(a,b){if(a._abs)b._abs=[a._abs[0],a._abs[1]+dy,a._abs[2],a._abs[3]];
+  const A=a.children,B=b.children;for(let i=0;i<A.length&&i<B.length;i++)walk(A[i],B[i]);})(src,c);return c;}
+
+function faiBuild(root){
+  const all=[...root.querySelectorAll('div')];
+  const map=all.find(d=>d._abs&&Math.round(d._abs[2])===434&&Math.round(d._abs[3])===285);if(!map)return null;
+  const panel=map.parentElement,PY=panel._abs[1];
+  const kid=(x,y)=>[...panel.children].find(e=>e._abs&&Math.round(e._abs[0])===x&&Math.round(e._abs[1])===y);
+  const hdr=kid(20,644),tl=kid(20,706),stA=kid(60,688),stB=kid(60,1032);
+  if(!hdr||!tl||!stA||!stB)return null;
+  const line=tl.querySelector('svg'),badge=[...tl.children].find(e=>e.tagName==='DIV');
+  let LINE_C='#e3e3e3';try{const u=line.querySelector('use'),sym=document.querySelector((u.getAttribute('href')||'').replace(/^#?/,'#'));const m=sym&&sym.innerHTML.match(/stroke="(#[0-9a-fA-F]{3,8})"/);if(m)LINE_C=m[1];}catch(e){}
+  [hdr,tl,stA,stB].forEach(e=>e.remove());
+  const put=(el,y)=>{el.style.top=(y-PY)+'px';panel.appendChild(el);return el;};
+  const T=el=>[...el.querySelectorAll('.t')];
+  const stops=[],days=[];let y=644;
+  ITIN.forEach(([dl,dd,list],di)=>{
+    const H=put(cloneAbs(hdr,y-644),y);const ht=T(H);setText(ht[0],dl);setText(ht[1],dd);H.classList.add('dayh');H.dataset.day=di;
+    const dayInfo={el:H,y,label:dl,date:dd,stops:[]};days.push(dayInfo);
+    let cy=y+44;const first=cy;let lastTop=cy;
+    const ln=document.createElement('div');panel.appendChild(ln);
+    list.forEach((s,i)=>{
+      const src=s.pin?stA:stB,g=put(cloneAbs(src,cy-src._abs[1]),cy);
+      const tt=T(g);setText(tt[0],s.n);setText(tt[1],s.d);setText(tt[2],s.t);setText(tt[3],s.m);
+      const ph=[...g.querySelectorAll('div')].find(e=>e._abs&&Math.round(e._abs[2])===140&&/img\//.test(e.style.background));if(ph)setImg(ph,ITIN_PH(s));
+      if(s.pin){const pc=g.children[1];const pp=[...pc.querySelectorAll('div')].find(e=>Math.round((e._abs||[])[2])===52&&/img\//.test(e.style.background));
+        if(pp)setImg(pp,PINS[s.k][8][(s.j+1)%PINS[s.k][8].length]);
+        const pt=T(pc)[0];if(pt){const p=pt.querySelector('p')||pt;p.innerHTML='';const b=document.createElement('b');b.style.fontWeight='700';b.textContent=s.pin[0];p.append(b,' '+s.pin[1]);}}
+      const bd=badge.cloneNode(true);bd.style.left='20px';bd.style.top=(cy+18-PY)+'px';bd.style.zIndex='4';setText(bd.querySelector('.t'),String(i+1));panel.appendChild(bd);
+      const st={el:g,y:cy,h:g._abs[3],day:di,i,s};stops.push(st);dayInfo.stops.push(st);lastTop=cy;
+      cy+=g._abs[3]+38;});
+    ln.style.cssText=`left:33.5px;top:${first+18+27-PY}px;width:1px;height:${lastTop+160-(first+45)}px;background:${LINE_C}`;
+    y=cy+12;});
+  const bottom=y-50+132;panel.style.height=(bottom-PY)+'px';panel._abs[3]=bottom-PY;
+  const cv=root.querySelector(':scope>.sc>.cv');if(cv)cv.style.height=(bottom+20)+'px';
+  return {map,panel,stops,days};
+}
+
+// live map: markers + route for one day, centred on the stop being read
+function faiMap(M,info){
+  let tCircle=null,tSel=null;
+  for(const [,w,n] of (M._mks||[])){if(n===1&&!tSel)tSel=w.firstElementChild;else if(n>1&&!tCircle)tCircle=w.firstElementChild;}
+  const map=M._map;if(!map||!tCircle)return null;
+  for(const [m] of M._mks)m.remove();
+  let marks=[],day=-1,foc=-1;
+  const mk=(tpl,s,n)=>{const e=tpl.cloneNode(true);e.style.left='0px';e.style.top='0px';const t=e.querySelector('.t');if(t)setText(t,String(n));
+    const im=[...e.querySelectorAll('div')].filter(d=>/img\//.test(d.style.background)).pop();if(im)setImg(im,ITIN_PH(s));return e;};
+  function setDay(d){if(d===day)return;day=d;foc=-1;marks.forEach(m=>m.m.remove());marks=[];
+    const list=ITIN[d][2];
+    list.forEach((s,i)=>{const w=document.createElement('div');w.className='mk mks';const a=tCircle.parentElement;w.style.cssText=`width:${a.style.width};height:${a.style.height}`;
+      const c=mk(tCircle,s,i+1),f=mk(tSel||tCircle,s,i+1);f.style.display='none';w.append(c,f);
+      const m=new maplibregl.Marker({element:w,anchor:'center'}).setLngLat(s.ll).addTo(map);marks.push({m,w,c,f});});
+    const data={type:'Feature',geometry:{type:'LineString',coordinates:list.map(s=>s.ll)}};
+    if(map.getSource('route'))map.getSource('route').setData(data);
+    else{map.addSource('route',{type:'geojson',data});
+      map.addLayer({id:'route-shadow',type:'line',source:'route',paint:{'line-color':'rgba(0,0,0,.07)','line-width':16,'line-blur':15},layout:{'line-cap':'round','line-join':'round'}});
+      map.addLayer({id:'route',type:'line',source:'route',paint:{'line-color':'#ffffff','line-width':4},layout:{'line-cap':'round','line-join':'round'}});}}
+  function setFocus(i){if(i===foc)return;foc=i;marks.forEach((k,j)=>{const on=j===i;k.c.style.display=on?'none':'';k.f.style.display=on?'':'none';k.w.style.zIndex=on?2:1;});}
+  function view(d,i,compact){const list=ITIN[d][2];
+    if(compact&&i>=0)map.easeTo({center:list[i].ll,zoom:14.2,duration:650});
+    else{const b=new maplibregl.LngLatBounds();list.forEach(s=>b.extend(s.ll));map.fitBounds(b,{padding:{top:60,bottom:50,left:50,right:50},maxZoom:14.5,duration:650});}}
+  return {setDay,setFocus,view};
+}
+
+/* AI Itinerary scroll: 0 expanded → 1 panel under the header (full map) → 2 map held at 130px while the
+   plan scrolls under it (map follows the stop being read, route follows the day) → 3 map closed, by
+   pushing the day bar up once more. Pulling the day bar down (or scrolling back to the top) reopens it. */
+function stickyFai(root){
+  const sc=root.querySelector(':scope>.sc');const fx=root.querySelector(':scope>.fx');
+  const info=faiBuild(root);if(!info||!sc||!fx)return false;
+  const {map,panel,stops,days}=info;
+  const myLog=[...root.querySelectorAll('.t')].find(t=>txt(t)==='My Log');const tabs=myLog&&myLog.parentElement;
+  const title=[...root.querySelectorAll('.t')].find(t=>txt(t)==='Sokcho Travel'&&t._abs&&t._abs[1]<300);
+  if(!tabs)return false;
+  const HB=146,TAB_Y=165,MC=130;
+  const S0=tabs._abs[1]-TAB_Y, MH=map._abs[3], yM=map._abs[1], C=MH-MC, END=S0+C;
+  const BAR_H=yM-(HB+S0), TOPB=HB+BAR_H;            // screen y of the map band once the panel is up
+  sc.style.isolation='isolate';
+  const box=css=>{const d=document.createElement('div');d.style.cssText=css;return d;};
+  map.style.zIndex='7';
+  const back=box(`left:0;top:${yM+MH-panel._abs[1]}px;width:430px;height:${Math.max(0,panel._abs[3]-(yM+MH-panel._abs[1]))}px;background:#fff;z-index:3`);
+  for(const k of [...panel.children])if(k!==map&&!k.style.zIndex)k.style.zIndex='3';
+  panel.insertBefore(back,panel.firstChild);
+  const strip=box(`left:0;top:${HB+S0-panel._abs[1]-1}px;width:430px;height:${BAR_H+1}px;background:#fff;z-index:8`);
+  panel.insertBefore(strip,panel.firstChild);tabs.style.zIndex='9';
+  const head=fx.firstElementChild;
+  const white=box(`left:0;top:0;width:430px;height:${HB+1}px;background:#fff;opacity:0;pointer-events:none;transition:opacity .25s ease`);
+  fx.insertBefore(white,head);
+  let mini=null;
+  if(title){mini=document.createElement('div');mini.className='t';
+    mini.style.cssText=title.style.cssText+`;left:84px;top:${84+25-14}px;width:250px;height:28px;font-size:20px;line-height:28px;opacity:0;transform:translateY(14px);pointer-events:none;white-space:nowrap;transition:opacity .25s ease,transform .45s cubic-bezier(.22,1,.36,1)`;
+    mini.innerHTML=title.innerHTML;fx.appendChild(mini);}
+  // sticky day bar: a copy of the day header that rides under the map band; it is also the handle that closes / reopens the map
+  const dayBar=box(`left:0;top:0;width:430px;height:44px;background:#fff;opacity:0;pointer-events:none;touch-action:none;cursor:grab;transition:opacity .15s`);
+  const dh=days[0].el.cloneNode(true);dh.style.left='20px';dh.style.top='12px';dh.style.zIndex='';dayBar.appendChild(dh);
+  const grab=box('left:195px;top:4px;width:40px;height:4px;border-radius:2px;background:#d6d6d6');dayBar.appendChild(grab);
+  fx.insertBefore(dayBar,fx.children[2]||null);
+  const dhT=[...dh.querySelectorAll('.t')];
+  let state=0,anim=false,k=0,kT=0,kRaf=0;            // k: 0 map open (130) … 1 map closed
+  const header=on=>{white.style.opacity=on?1:0;if(mini){mini.style.opacity=on?1:0;mini.style.transform=on?'none':'translateY(14px)';}};
+  // map live control (set once tiles are in)
+  let ctl=null,curDay=0,curStop=-1,compact=false;
+  const ME=[map,...map.querySelectorAll('div')].find(e=>/1fe3120dbb|8d063bd2c0/.test(e.style.background||''))||map;
+  const hook=()=>{if(!ME._map||ctl)return;ctl=faiMap(ME,info);if(ctl){ctl.setDay(0);ctl.view(0,-1,false);sync(true);}};
+  ME._onMap=hook;hook();
+  function frame(st){
+    const p=Math.max(0,st-S0);
+    strip.style.transform=tabs.style.transform=p?`translateY(${p}px)`:'';
+    const c=Math.min(p,C), Hd=c+(p>=C-1?k*MC:0);   // hidden px (top+bottom)
+    map.style.transform=p?`translateY(${p-Hd/2}px)`:'';
+    map.style.clipPath=Hd>0?`inset(${Hd/2}px 0 ${Hd/2}px 0)`:'';
+    map.style.boxShadow=Hd>=C&&k<1?'0 10px 24px -12px rgba(0,0,0,.25)':'none';
+    map.style.visibility=k>=.999&&p>=C-1?'hidden':'';
+    const inBand=st>=END-1;
+    dayBar.style.top=(TOPB+MH-Hd)+'px';
+    dayBar.style.opacity=inBand?1:0;dayBar.style.pointerEvents=inBand?'auto':'none';
+    return p;}
+  function sync(force){const st=sc.scrollTop;const p=Math.max(0,st-S0);const nowCompact=p>=C-1;
+    // stop being read: the last one whose card top passed a line under the band + day bar
+    const line=TOPB+(MH-Math.min(p,C))+44+60;let on=stops[0];
+    for(const s of stops)if(s.y-st<line)on=s;
+    if(!nowCompact)on=stops.find(s=>s.day===on.day&&s.i===0)||on;
+    // day bar shows the day whose header has scrolled under it
+    let dI=0;for(const d of days)if(d.y-st<=TOPB+MH-Math.min(p,C)+2)dI=+d.el.dataset.day;
+    setText(dhT[0],days[dI].label);setText(dhT[1],days[dI].date);
+    if(!ctl)return;
+    if(on.day!==curDay){curDay=on.day;ctl.setDay(curDay);force=true;}
+    const sI=nowCompact?on.i:-1;
+    if(force||sI!==curStop||nowCompact!==compact){curStop=sI;compact=nowCompact;ctl.setFocus(sI);if(k<1)ctl.view(curDay,sI,compact);}}
+  function setK(t){kT=t;cancelAnimationFrame(kRaf);const k0=k,t0=performance.now();
+    (function f(now){const e=Math.min(1,(now-t0)/320),q=1-Math.pow(1-e,3);k=k0+(t-k0)*q;frame(sc.scrollTop);if(e<1)kRaf=requestAnimationFrame(f);else if(t===0)sync(true);})(t0);}
+  const TARGET=[0,S0,END];
+  function go(to){
+    if(anim||to===state)return;anim=true;
+    const from=sc.scrollTop,target=TARGET[to],t0=performance.now(),dur=440;
+    sc.style.overflowY='hidden';header(to>0);if(to<2&&k>0)setK(0);
+    (function step(now){const e=Math.min(1,(now-t0)/dur),q=1-Math.pow(1-e,4);
+      const st=from+(target-from)*q;sc.scrollTop=st;frame(st);
+      if(e<1){requestAnimationFrame(step);return;}
+      state=to;sc.style.overflowY='auto';sync(true);requestAnimationFrame(()=>{anim=false;});})(t0);}
+  sc.addEventListener('scroll',()=>{const st=sc.scrollTop;frame(st);if(anim)return;
+    if(state<2&&st>TARGET[state]+2)go(state+1);
+    else if(state>0&&st<TARGET[state]-2)go(state-1);
+    else sync(false);},{passive:true});
+  // the day bar handle: push up once more → map closes; pull down → map back to 130px
+  let dy0=null,fired=false;
+  dayBar.addEventListener('pointerdown',e=>{dy0=e.clientY;fired=false;try{dayBar.setPointerCapture(e.pointerId);}catch(_){}});
+  dayBar.addEventListener('pointermove',e=>{if(dy0==null||fired)return;const d=(e.clientY-dy0)/(SCALE||1);
+    if(d<-22&&kT===0){fired=true;setK(1);}else if(d>22&&kT===1){fired=true;setK(0);}});
+  const up=()=>{dy0=null;};dayBar.addEventListener('pointerup',up);dayBar.addEventListener('pointercancel',up);
+  requestAnimationFrame(()=>{frame(sc.scrollTop);sync(true);});
+  return true;
+}
 
 const TOG={"v17xz2et": "heart", "v1gos3jc": "bm", "vexzty2": "heart", "vb4eiif": "bm"};
 const NS='http://www.w3.org/2000/svg';
