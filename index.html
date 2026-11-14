@@ -921,13 +921,15 @@ function faiMap(M,info){
   function setFocus(i){if(i===foc)return;foc=i;marks.forEach((k,j)=>{const on=j===i;k.c.style.display=on?'none':'';k.f.style.display=on?'':'none';k.w.style.zIndex=on?2:1;});}
   function view(d,i,compact){const list=ITIN[d][2];
     if(compact&&i>=0)map.easeTo({center:list[i].ll,zoom:14.2,duration:650});
-    else{const b=new maplibregl.LngLatBounds();list.forEach(s=>b.extend(s.ll));map.fitBounds(b,{padding:{top:60,bottom:50,left:50,right:50},maxZoom:14.5,duration:650});}}
+    else{const b=new maplibregl.LngLatBounds();list.forEach(s=>b.extend(s.ll));const v=compact?95:55;map.fitBounds(b,{padding:{top:v+5,bottom:v-5,left:50,right:50},maxZoom:14.5,duration:700});}}
   return {setDay,setFocus,view};
 }
 
 /* AI Itinerary scroll: 0 expanded → 1 panel under the header (full map) → 2 map held at 130px while the
    plan scrolls under it (map follows the stop being read, route follows the day) → 3 map closed, by
-   pushing the day bar up once more. Pulling the day bar down (or scrolling back to the top) reopens it. */
+   pushing the day bar up once more. Pulling the day bar down (or scrolling back to the top) reopens it.
+   Everything that stays put while the list scrolls (tabs, map, day bar) lives in the fixed layer, so it
+   never has to chase the scroll position (that is what made it shake on iPhone). */
 function stickyFai(root){
   const sc=root.querySelector(':scope>.sc');const fx=root.querySelector(':scope>.fx');
   const info=faiBuild(root);if(!info||!sc||!fx)return false;
@@ -940,58 +942,68 @@ function stickyFai(root){
   const BAR_H=yM-(HB+S0), TOPB=HB+BAR_H;            // screen y of the map band once the panel is up
   sc.style.isolation='isolate';
   const box=css=>{const d=document.createElement('div');d.style.cssText=css;return d;};
-  map.style.zIndex='7';
-  const back=box(`left:0;top:${yM+MH-panel._abs[1]}px;width:430px;height:${Math.max(0,panel._abs[3]-(yM+MH-panel._abs[1]))}px;background:#fff;z-index:3`);
-  for(const k of [...panel.children])if(k!==map&&!k.style.zIndex)k.style.zIndex='3';
-  panel.insertBefore(back,panel.firstChild);
-  const strip=box(`left:0;top:${HB+S0-panel._abs[1]-1}px;width:430px;height:${BAR_H+1}px;background:#fff;z-index:8`);
-  panel.insertBefore(strip,panel.firstChild);tabs.style.zIndex='9';
+  // white under the panel where the map used to be (the map itself moves to the fixed layer)
+  const hole=box(`left:${map.style.left};top:${map.style.top};width:${map.style.width};height:${map.style.height};background:#fff`);
+  panel.insertBefore(hole,map);
+  // fixed tab bar (shown once the panel reaches the header)
   const head=fx.firstElementChild;
   const white=box(`left:0;top:0;width:430px;height:${HB+1}px;background:#fff;opacity:0;pointer-events:none;transition:opacity .25s ease`);
   fx.insertBefore(white,head);
+  const bar=box(`left:0;top:${HB-1}px;width:430px;height:${BAR_H+1}px;background:#fff;visibility:hidden`);
+  const tabsCopy=tabs.cloneNode(true);tabsCopy.style.left=tabs._abs[0]+'px';tabsCopy.style.top=(TAB_Y-HB+1)+'px';tabsCopy.style.zIndex='';tabsCopy.style.transform='';
+  bar.appendChild(tabsCopy);
+  const tb=tabs._abs,cv=sc.firstElementChild;
+  for(const hs of [...cv.querySelectorAll(':scope>.hs')]){const t=parseFloat(hs.style.top),hh=parseFloat(hs.style.height);
+    if(t>=tb[1]-12&&t+hh<=tb[1]+tb[3]+12){const d=box(`left:${hs.style.left};top:${t-tb[1]+(TAB_Y-HB)+1}px;width:${hs.style.width};height:${hh}px;cursor:pointer`);
+      d.dataset.act=hs.dataset.act;d.setAttribute('role','button');d.setAttribute('aria-label',hs.getAttribute('aria-label')||'');bar.appendChild(d);}}
+  // the map, in screen coordinates
+  map.remove();map.style.left=map._abs[0]+'px';map.style.top=yM+'px';map.style.zIndex='';map.style.willChange='transform,clip-path';
+  // sticky day bar: copy of the day header under the map band; also the handle that closes / reopens the map
+  const dayBar=box(`left:0;top:0;width:430px;height:44px;background:#fff;opacity:0;pointer-events:none;touch-action:none;cursor:grab`);
+  const dh=days[0].el.cloneNode(true);dh.style.left='20px';dh.style.top='12px';dh.style.zIndex='';dayBar.appendChild(dh);
+  dayBar.appendChild(box('left:195px;top:4px;width:40px;height:4px;border-radius:2px;background:#d6d6d6'));
+  const after=head.nextSibling;fx.insertBefore(map,after);fx.insertBefore(bar,after);fx.insertBefore(dayBar,after);
   let mini=null;
   if(title){mini=document.createElement('div');mini.className='t';
     mini.style.cssText=title.style.cssText+`;left:84px;top:${84+25-14}px;width:250px;height:28px;font-size:20px;line-height:28px;opacity:0;transform:translateY(14px);pointer-events:none;white-space:nowrap;transition:opacity .25s ease,transform .45s cubic-bezier(.22,1,.36,1)`;
     mini.innerHTML=title.innerHTML;fx.appendChild(mini);}
-  // sticky day bar: a copy of the day header that rides under the map band; it is also the handle that closes / reopens the map
-  const dayBar=box(`left:0;top:0;width:430px;height:44px;background:#fff;opacity:0;pointer-events:none;touch-action:none;cursor:grab;transition:opacity .15s`);
-  const dh=days[0].el.cloneNode(true);dh.style.left='20px';dh.style.top='12px';dh.style.zIndex='';dayBar.appendChild(dh);
-  const grab=box('left:195px;top:4px;width:40px;height:4px;border-radius:2px;background:#d6d6d6');dayBar.appendChild(grab);
-  fx.insertBefore(dayBar,fx.children[2]||null);
   const dhT=[...dh.querySelectorAll('.t')];
   let state=0,anim=false,k=0,kT=0,kRaf=0;            // k: 0 map open (130) … 1 map closed
   const header=on=>{white.style.opacity=on?1:0;if(mini){mini.style.opacity=on?1:0;mini.style.transform=on?'none':'translateY(14px)';}};
-  // map live control (set once tiles are in)
-  let ctl=null,curDay=0,curStop=-1,compact=false;
+  let ctl=null,curDay=0,curStop=-1,compact=false,lastF='';
   const ME=[map,...map.querySelectorAll('div')].find(e=>/1fe3120dbb|8d063bd2c0/.test(e.style.background||''))||map;
   const hook=()=>{if(!ME._map||ctl)return;ctl=faiMap(ME,info);if(ctl){ctl.setDay(0);ctl.view(0,-1,false);sync(true);}};
   ME._onMap=hook;hook();
   function frame(st){
-    const p=Math.max(0,st-S0);
-    strip.style.transform=tabs.style.transform=p?`translateY(${p}px)`:'';
-    const c=Math.min(p,C), Hd=c+(p>=C-1?k*MC:0);   // hidden px (top+bottom)
-    map.style.transform=p?`translateY(${p-Hd/2}px)`:'';
-    map.style.clipPath=Hd>0?`inset(${Hd/2}px 0 ${Hd/2}px 0)`:'';
-    map.style.boxShadow=Hd>=C&&k<1?'0 10px 24px -12px rgba(0,0,0,.25)':'none';
-    map.style.visibility=k>=.999&&p>=C-1?'hidden':'';
+    const p=Math.max(0,st-S0),c=Math.min(p,C),Hd=c+(p>=C-1?k*MC:0);
+    const f=`${Math.round(Math.min(st,S0)*2)}|${Math.round(Hd*2)}`;
+    const up=st>=S0-0.5;
+    tabs.style.visibility=up?'hidden':'';bar.style.visibility=up?'visible':'hidden';
+    if(f!==lastF){lastF=f;
+      map.style.transform=`translateY(${(-Math.min(st,S0)-Hd/2).toFixed(1)}px)`;
+      map.style.clipPath=Hd>0?`inset(${(Hd/2).toFixed(1)}px 0 ${(Hd/2).toFixed(1)}px 0)`:'';
+      map.style.boxShadow=Hd>=C&&k<1?'0 10px 24px -12px rgba(0,0,0,.25)':'none';
+      map.style.opacity=k>=.999&&p>=C-1?'0':'';map.style.pointerEvents=k>=.999&&p>=C-1?'none':'';
+      dayBar.style.top=(Math.floor(TOPB+MH-Hd)-1)+'px';}
     const inBand=st>=END-1;
-    dayBar.style.top=(TOPB+MH-Hd)+'px';
     dayBar.style.opacity=inBand?1:0;dayBar.style.pointerEvents=inBand?'auto':'none';
+    // before the panel is up the map scrolls with the page
+    if(!up)map.style.transform=`translateY(${(-st-Hd/2).toFixed(1)}px)`;
     return p;}
   function sync(force){const st=sc.scrollTop;const p=Math.max(0,st-S0);const nowCompact=p>=C-1;
-    // stop being read: the last one whose card top passed a line under the band + day bar
-    const line=TOPB+(MH-Math.min(p,C))+44+60;let on=stops[0];
+    const line=TOPB+(MH-Math.min(p,C)-(nowCompact?k*MC:0))+44+60;let on=stops[0];
     for(const s of stops)if(s.y-st<line)on=s;
     if(!nowCompact)on=stops.find(s=>s.day===on.day&&s.i===0)||on;
-    // day bar shows the day whose header has scrolled under it
     let dI=0;for(const d of days)if(d.y-st<=TOPB+MH-Math.min(p,C)+2)dI=+d.el.dataset.day;
-    setText(dhT[0],days[dI].label);setText(dhT[1],days[dI].date);
+    if(txt(dhT[0])!==days[dI].label){setText(dhT[0],days[dI].label);setText(dhT[1],days[dI].date);}
     if(!ctl)return;
-    if(on.day!==curDay){curDay=on.day;ctl.setDay(curDay);force=true;}
+    if(on.day!==curDay){curDay=on.day;ctl.setDay(curDay);curStop=on.i;compact=nowCompact;ctl.setFocus(on.i);
+      // a new day: bring the map back (if it was closed) and zoom out to that day's whole route first
+      if(kT===1)setK(0,true);ctl.view(curDay,-1,nowCompact);return;}
     const sI=nowCompact?on.i:-1;
-    if(force||sI!==curStop||nowCompact!==compact){curStop=sI;compact=nowCompact;ctl.setFocus(sI);if(k<1)ctl.view(curDay,sI,compact);}}
-  function setK(t){kT=t;cancelAnimationFrame(kRaf);const k0=k,t0=performance.now();
-    (function f(now){const e=Math.min(1,(now-t0)/320),q=1-Math.pow(1-e,3);k=k0+(t-k0)*q;frame(sc.scrollTop);if(e<1)kRaf=requestAnimationFrame(f);else if(t===0)sync(true);})(t0);}
+    if(force||sI!==curStop||nowCompact!==compact){curStop=sI;compact=nowCompact;ctl.setFocus(sI);if(kT<1)ctl.view(curDay,sI,compact);}}
+  function setK(t,quiet){kT=t;cancelAnimationFrame(kRaf);const k0=k,t0=performance.now();
+    (function f(now){const e=Math.min(1,(now-t0)/320),q=1-Math.pow(1-e,3);k=k0+(t-k0)*q;frame(sc.scrollTop);if(e<1)kRaf=requestAnimationFrame(f);else if(t===0&&!quiet)sync(true);})(t0);}
   const TARGET=[0,S0,END];
   function go(to){
     if(anim||to===state)return;anim=true;
@@ -1005,12 +1017,11 @@ function stickyFai(root){
     if(state<2&&st>TARGET[state]+2)go(state+1);
     else if(state>0&&st<TARGET[state]-2)go(state-1);
     else sync(false);},{passive:true});
-  // the day bar handle: push up once more → map closes; pull down → map back to 130px
   let dy0=null,fired=false;
   dayBar.addEventListener('pointerdown',e=>{dy0=e.clientY;fired=false;try{dayBar.setPointerCapture(e.pointerId);}catch(_){}});
   dayBar.addEventListener('pointermove',e=>{if(dy0==null||fired)return;const d=(e.clientY-dy0)/(SCALE||1);
     if(d<-22&&kT===0){fired=true;setK(1);}else if(d>22&&kT===1){fired=true;setK(0);}});
-  const up=()=>{dy0=null;};dayBar.addEventListener('pointerup',up);dayBar.addEventListener('pointercancel',up);
+  const upH=()=>{dy0=null;};dayBar.addEventListener('pointerup',upH);dayBar.addEventListener('pointercancel',upH);
   requestAnimationFrame(()=>{frame(sc.scrollTop);sync(true);});
   return true;
 }
