@@ -1415,6 +1415,7 @@ function mountMap(M,cfg,root){
     else{const small=[...o.children].filter(k=>k._abs&&k._abs[2]<=90&&k._abs[3]<=90);
       if(small.length>=2){pins.push(...small);[...o.children].filter(k=>!small.includes(k)&&k.tagName==='svg').forEach(k=>routes.push(k));}}
   }
+  for(const p of pins)for(const g of [...(p.parentNode?p.parentNode.children:[])])if(g._glFor===p)g.remove(); // glass disc would blur the pin
   for(const o of overlays)if(!pins.includes(o))o.style.pointerEvents='none';
   // Figma drop shadow on a group follows its content (route line + pins), not its bounding box
   for(const o of overlays)if(!pins.includes(o)&&o.style.boxShadow&&!o.style.background){const m=o.style.boxShadow.match(/(rgba?\([^)]*\))\s+([-\d.]+)px\s+([-\d.]+)px\s+([\d.]+)px/)||o.style.boxShadow.match(/([-\d.]+)px\s+([-\d.]+)px\s+([\d.]+)px[^,]*?(rgba?\([^)]*\))/);
@@ -1454,15 +1455,16 @@ function mountMap(M,cfg,root){
     for(const p of pins){const a=p._abs;const cx=a[0]+a[2]/2-mx,cy=a[1]+a[3]/2-my;
       const ll=map.unproject([cx,cy]);const wrap=document.createElement('div');wrap.className=cfg.mks?'mk mks':'mk';
       wrap.style.cssText=`width:${a[2]}px;height:${a[3]}px`;
-      // the pin's glass disc (added behind the svg) has to travel with the marker, or it is left behind on the map
-      {const pl=parseFloat(p.style.left)||0,pt=parseFloat(p.style.top)||0;for(const g of [...(p.parentNode?p.parentNode.children:[])])if(g._glFor===p){g.style.left=(parseFloat(g.style.left)-pl)+'px';g.style.top=(parseFloat(g.style.top)-pt)+'px';wrap.appendChild(g);}}
+      // Figma gives the pin a liquid-glass disc; over a live map it only blurs the pin graphic, so drop it
+      for(const g of [...(p.parentNode?p.parentNode.children:[])])if(g._glFor===p)g.remove();
       p.style.left='0px';p.style.top='0px';p.style.transform='none';wrap.appendChild(p);
-      new maplibregl.Marker({element:wrap,anchor:'center'}).setLngLat(ll).addTo(map);
-      const n=parseInt((p.textContent||'').trim());if(!isNaN(n))pts.push([n,[ll.lng,ll.lat]]);}
+      const mkr=new maplibregl.Marker({element:wrap,anchor:'center'}).setLngLat(ll).addTo(map);
+      const n=parseInt((p.textContent||'').trim());if(!isNaN(n))pts.push([n,[ll.lng,ll.lat]]);(M._mks=M._mks||[]).push([mkr,wrap,n]);}
     if(routes.length&&pts.length>=2){routes.forEach(r=>r.remove());pts.sort((a,b)=>a[0]-b[0]);
       map.addSource('route',{type:'geojson',data:{type:'Feature',geometry:{type:'LineString',coordinates:pts.map(p=>p[1])}}});
       map.addLayer({id:'route-shadow',type:'line',source:'route',paint:{'line-color':'rgba(0,0,0,.07)','line-width':16,'line-blur':15},layout:{'line-cap':'round','line-join':'round'}});
       map.addLayer({id:'route',type:'line',source:'route',paint:{'line-color':'#ffffff','line-width':4},layout:{'line-cap':'round','line-join':'round'}});}
+    M._map=map;if(M._onMap)try{M._onMap(map);}catch(e){console.error(e);}
   });
   map.on('error',()=>{});
 }
