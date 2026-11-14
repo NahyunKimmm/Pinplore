@@ -87,10 +87,14 @@ function blurLayer(before){const b=mk('div','mblur');before.parentNode.insertBef
 function setBlur(b,v){if(b)b.style.opacity=cl(v)}
 /* the opened pin is lifted out of the world to the top of the screen (Figma: pin above the card) */
 const LIFT={x:215,y:203,w:54};
-function lift(els,f){if(f<=0)return;const e=els[1],r=e.getBoundingClientRect();if(!r.width)return;
+function lift(els,f,col='255,130,115'){if(f<=0){unlift(els);return}const e=els[1],r=e.getBoundingClientRect();if(!r.width)return;
   const P=[(r.left+r.width/2)/V.u,(r.top+r.height/2)/V.u],pw=r.width/V.u,loc=e.offsetWidth/pw;
   const dx=(LIFT.x-P[0])*f*loc, dy=(LIFT.y-P[1])*f*loc, sc=li(1,LIFT.w/pw,f);
-  els.forEach(el=>{el.style.transformOrigin='50% 50%';el.style.transform+=` translate(${dx/(el===e?1:1)}px,${dy}px) scale(${sc})`})}
+  els.forEach(el=>{el.style.transformOrigin='50% 50%';el.style.transform+=` translate(${dx/(el===e?1:1)}px,${dy}px) scale(${sc})`});
+  /* active state (Figma Pin · active): saturated fill, white rim, soft glow */
+  e.style.filter=`saturate(${1+1.6*f}) contrast(${1+.12*f})`;
+  e.style.boxShadow=`0 0 0 ${2.5*f/sc}px rgba(255,255,255,${.95*f}), 0 0 ${22*f/sc}px ${4*f/sc}px rgba(${col},${.6*f})`}
+function unlift(els){els[1].style.filter='';}
 /* a pin's card: 380 wide under the lifted pin, folds back into it */
 function cardUnder(els,w,size,f){const k=380/size[0],[x,y]=xy(els[1]),top=LIFT.y+LIFT.w/2+18;
   const m=M([x,y],[25,Math.min(top,V.H-24-size[1]*k)],k);place(w,m);
@@ -213,7 +217,7 @@ if(FLOW==='route'){
     /* D · the pin's place: same rules as Explore */
     place(LY.rail,M([1203,310],[424,cy(360)],1));
     const wopen=tc>=0?eo(pr(tc,...D.cardIn)):0;
-    if(tc>=D.tap)lift(wpEls[0],wopen);
+    if(tc>=D.tap)lift(wpEls[0],wopen,'240,130,255');
     if(+q('wCard').style.opacity>0)cardUnder([q('wCardS'),q('wCard')],LY.wcard,[337,501],wopen);
     setBlur(LY.wblur,wopen);LY.rail.style.opacity=1-wopen;
     /* call to action + its tap */
