@@ -1311,7 +1311,7 @@ function buildPan(n,cv,name){
   const inst=[];let pid=0;
   base.forEach((c,ci)=>{const [cx,cy,cw,ch,ccss,tiles]=c.n;const Pc=ch+GAP;
     tiles.forEach((t,ti)=>{t._pin=t._pin||('c'+ci+'t'+ti);});
-    for(let i=0;i<4;i++){const copies=[];
+    for(let i=0;i<6;i++){const copies=[];
       for(let j=0;j<4;j++){const st=document.createElement('div');st.style.cssText=`left:0;top:0;width:${cw}px;height:${ch}px;${ccss};will-change:transform`;
         for(const t of tiles){node(t,st,-1e5+c.bx,c.by);const el=st.lastChild;el.dataset.tile=t[5].length?'memo':'photo';el.dataset.pin=t._pin;
           if(t[5].length&&!/url\(/.test(JSON.stringify(t[5]))){const tx=el.querySelector('.t');if(tx){const P=PINS[pinIdx(t._pin)];const p=tx.querySelector('p');p.textContent=P[3];p.style.cssText='display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:'+Math.max(1,Math.floor(parseFloat(tx.style.height)/16))+';overflow:hidden';}}
@@ -1366,7 +1366,7 @@ function buildPan(n,cv,name){
         if(el._bg0==null){el._bg0=el.style.background;el._t0=parseFloat(el.style.top);el._h0=parseFloat(el.style.height);}
         el.querySelectorAll(':scope>.mz,:scope>.mzp').forEach(x=>x.remove());el.style.background=el._bg0;el.style.overflow='';el._ph=null;el._pk=k;
         el.style.top=el._t0+'px';el.style.height=el._h0+'px';el._mc=null;
-        el._rk=key+':'+ti;const img=REPL.get(el._rk)||photoFor(k,ti,n,m);el.dataset.bg=img;el.dataset.tile='photo';
+        el._rk=ci+'|'+key+':'+ti;const img=REPL.get(el._rk)||photoFor(k,ti,n,m);el.dataset.bg=img;el.dataset.tile='photo';
         const w=tl[2],h=tl[3],r=rr(ti);
         if(r<40){                               // ~40% of photo tiles carry a memo so notes are spread evenly
           if(h>=190){                           // tall: photo on top, memo below
@@ -1469,15 +1469,24 @@ function buildPan(n,cv,name){
   // no photo shown twice on one screen: tiles already on screen keep theirs, newcomers take an unused photo
   const POOL=[...new Set(PINS.flatMap(p=>p[8]))];let shownBefore=new Set(),dedupT=0;
   function setTilePhoto(el,h){el.dataset.bg=h;if(el._rk)REPL.set(el._rk,h);if(el._ph)el._ph.style.backgroundImage=IMGX(h);else if(el.dataset.tile==='photo')setImg(el,h);}
-  function dedupe(){const W=wrap.getBoundingClientRect();const vis=[];const scope=parseFloat(board.style.opacity||0)>=.5?board:layer0;
-    for(const el of scope.querySelectorAll('[data-bg]')){if(el.offsetParent===null)continue;const r=el.getBoundingClientRect();
-      if(r.right>W.left&&r.left<W.right&&r.bottom>W.top&&r.top<W.bottom&&r.width>2)vis.push(el);}
-    const sc=e=>(e.closest('[data-foc]')?2:0)+(shownBefore.has(e)?1:0);vis.sort((x,y)=>sc(y)-sc(x));   // the focused search column keeps its photos
+  /* no photo twice on one screen, decided before a tile comes into view: tiles within a margin around the screen are
+     checked, any tile that has been on screen keeps its photo, and only tiles still off screen are given another one,
+     so nothing visibly swaps while the wall moves */
+  let seen=new Set(),wasNear=new Set();
+  function dedupe(){const W=wrap.getBoundingClientRect(),m=360*(SCALE||1);const scope=parseFloat(board.style.opacity||0)>=.5?board:layer0;
+    const near=[],inView=new Set(),K=e=>e._rk||e,dist=new Map();
+    for(const el of scope.querySelectorAll('[data-bg]')){if(el.offsetParent===null)continue;const r=el.getBoundingClientRect();if(r.width<=2)continue;
+      if(r.right>W.left-m&&r.left<W.right+m&&r.bottom>W.top-m&&r.top<W.bottom+m){near.push(el);
+        dist.set(el,Math.max(0,W.left-r.right,r.left-W.right)+Math.max(0,W.top-r.bottom,r.top-W.bottom));
+        if(r.right>W.left&&r.left<W.right&&r.bottom>W.top&&r.top<W.bottom)inView.add(K(el));}}
+    // priority: been on screen > on screen now > already near last time > closer to the screen
+    const sc=e=>(seen.has(K(e))?8e4:0)+(inView.has(K(e))?4e4:0)+(e.closest('[data-foc]')?2e4:0)+(wasNear.has(K(e))?1e4:0)-dist.get(e);near.sort((x,y)=>sc(y)-sc(x));
     const used=new Set();
-    for(const el of vis){let h=el.dataset.bg;if(used.has(h)){const k=+el.dataset.pin||0;
+    for(const el of near){let h=el.dataset.bg;const locked=seen.has(K(el));
+      if(used.has(h)&&!locked){const k=+el.dataset.pin||0;
         const cand=[...PINS[k%NP][8],...POOL.slice(hh(k,7)%POOL.length),...POOL];h=cand.find(x=>!used.has(x))||h;setTilePhoto(el,h);}
       used.add(h);}
-    shownBefore=new Set(vis);regionCheck();}
+    const keep=new Set(near.map(K));wasNear=keep;seen=new Set([...seen].filter(k=>keep.has(k)));inView.forEach(k=>seen.add(k));regionCheck();}
   /* header title follows the area you are looking at: the region most of the pins in the middle of the screen belong to.
      It only switches after the wall has travelled a fair way since the last switch and the new region clearly leads. */
   function regionCheck(){const T=wrap._ttl;if(!T)return;
@@ -1490,7 +1499,7 @@ function buildPan(n,cv,name){
     T.style.transition='opacity .18s ease,transform .18s ease';T.style.opacity='0';T.style.transform='translateY(-6px)';
     setTimeout(()=>{p.textContent=txt;T.style.transition='none';T.style.transform='translateY(6px)';T.getBoundingClientRect();
       T.style.transition='opacity .25s ease,transform .25s ease';T.style.opacity='';T.style.transform='';},180);}
-  const queueDedupe=()=>{if(dedupT)return;dedupT=setTimeout(()=>{dedupT=0;dedupe();},90);};
+  const queueDedupe=()=>{if(dedupT)return;dedupT=setTimeout(()=>{dedupT=0;dedupe();},60);};
   let lastPlace=0;
   function place(){lastPlace=performance.now();
     PANPOS.x=ox;PANPOS.y=oy;PANPOS.s=zs;PANPOS.bx=bx;PANPOS.by=by;queueDedupe();
@@ -1509,11 +1518,11 @@ function buildPan(n,cv,name){
     if(a<1)renderBoard(GK*zs);
     if(a<=0)return;
     const sb=Math.max(zs,ZT0),cy=CY();layer.style.transform=sb===1?'':`translate(${(CX*(1-sb)).toFixed(2)}px,${(cy*(1-sb)).toFixed(2)}px) scale(${sb.toFixed(4)})`;
-    const x0=CX-CX/sb-20,x1=CX+CX/sb+20,y0=cy-cy/sb-20,y1=cy+(WH()-cy)/sb+20;
+    const MG=380,x0=CX-CX/sb-MG,x1=CX+CX/sb+MG,y0=cy-cy/sb-MG,y1=cy+(WH()-cy)/sb+MG;   // tiles exist a margin ahead of the screen so their photos are settled before they show
     const Fv=FOC.F,fc=FOC.ci>=0?base[FOC.ci]:null,fcx=fc?fc.bx+ox+FOC.n*P+fc.n[2]/2:0;
-    for(const I of inst){let X=I.c.bx+I.i*P+mod(ox,P)-P;
+    for(const I of inst){let X=I.c.bx+I.i*P+mod(ox,P)-2*P;
       const Y0=mod(I.c.by+oy,I.Pc)-2*I.Pc;
-      const wn=I.i-1-Math.floor(ox/P),wm0=-2-Math.floor((I.c.by+oy)/I.Pc);
+      const wn=I.i-2-Math.floor(ox/P),wm0=-2-Math.floor((I.c.by+oy)/I.Pc);
       const foc=Fv>0&&I.ci===FOC.ci&&wn===FOC.n,k=foc?1+(227/167-1)*Fv:1,xc=X+I.cw/2;
       if(Fv>0&&!foc)X+=(xc<fcx?-1:1)*30*Fv;
       if(foc)X=xc-I.cw*k/2;
@@ -1523,7 +1532,7 @@ function buildPan(n,cv,name){
         if(foc)st.dataset.foc='1';else delete st.dataset.foc;
         if(on){st.style.transformOrigin='0 0';st.style.transform=`translate3d(${X}px,${Y}px,0)`+(k!==1?` scale(${k.toFixed(4)})`:'');st.style.opacity=op;}});}
   }
-  place();cv.appendChild(wrap);
+  place();cv.appendChild(wrap);requestAnimationFrame(()=>requestAnimationFrame(place));   // again once the screen is attached (header title colour/area)
   if(name==='search')setTimeout(()=>enterFocus('Sokcho'),380);   // the searched term (the search field reads "Sokcho")
   // drag + inertia, tap / long-press
   let sx,sy,lx,ly,lt,vx=0,vy=0,moved=false,down=false,lp=null,tileEl=null,raf=0;
