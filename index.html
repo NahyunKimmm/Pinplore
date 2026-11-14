@@ -690,6 +690,9 @@ const CUSTOM={
       h('div',{cls:'btn','data-act':'back|toast:Itinerary saved'},'Save changes')));
     return root;},
 };
+/* curation: the Area Vibe cards sit on the white sheet — Figma (632:12331) is a white card, #ECEDF6 border, radius 15;
+   its glass overlay reads as a grey tint with a second rounded edge on white, so they are drawn without it */
+GLASS.curation=(GLASS.curation||[]).filter(g=>!(g[0]===20&&g[2]===390&&g[1]>900&&g[1]<2300));
 SCREENS.arLens=SCREENS.ar;   // keeps the Figma AR screen's tab bar for the custom AR lens
 /* Blind view · 2안 (Figma Blind/검색하면? 543:14509, updated): light grey #f5f5f5 ground instead of the blue gradient,
    a soft blue radial rim (Rectangle 1954141356, 60%) over the wall, a lighter top shell (white 30% → 0). Pins/tiles unchanged. */
