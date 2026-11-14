@@ -1329,7 +1329,16 @@ function buildPan(n,cv,name){
      threshold lets go of it and the wall returns to normal. */
   const REPL=PAN_REPL;   // photos swapped by dedupe, per tile (column copies get reassigned as the wall moves; the swap must stick)
   const FOC={on:false,F:0,ci:-1,n:0,ox:0,acc:0,list:null,anim:0};if(SEARCH_COL)Object.assign(FOC,SEARCH_COL);
-  const pinFor=(ci,n,m,ti)=>{const h=hh(ci,n,m,Math.floor(ti/3));return FOC.list&&FOC.ci===ci&&FOC.n===n?FOC.list[h%FOC.list.length]:h%NP;};
+  /* areas: the wall is split into large cells (3 columns × ~900px), each standing for one region; ~70% of a cell's pins
+     come from that region, so moving across the wall moves you between places (the header title follows) */
+  const AREAS=(()=>{const by={};PINS.forEach((P,i)=>{(by[P[0]]=by[P[0]]||[]).push(i);});
+    const names=Object.keys(by).filter(k=>by[k].length>=2).sort((a,b)=>a==='Korea, Sokcho'?-1:b==='Korea, Sokcho'?1:0);return {by,names};})();
+  const CELLW=P,CELLH=900;
+  const areaAt=(wx,wy)=>{const i=Math.floor(wx/CELLW),j=Math.floor(wy/CELLH),L=AREAS.names.length;
+    return AREAS.names[(((i*2+j)%L)+L)%L];};   // neighbouring areas are always different places; (0,0) = Sokcho
+  const pinFor=(ci,n,m,ti)=>{const h=hh(ci,n,m,Math.floor(ti/3));if(FOC.list&&FOC.ci===ci&&FOC.n===n)return FOC.list[h%FOC.list.length];
+    const c=base[ci],t=c.n[5][ti]||[0,0,0,0];const L=AREAS.by[areaAt(c.bx+n*P+c.n[2]/2-CX,c.by+m*(c.n[3]+GAP)+t[1]+t[3]/2-466)];
+    return h%10<7&&L?L[hh(h,3)%L.length]:h%NP;};
   const isMusic=t=>t[5].length&&/url\(/.test(JSON.stringify(t[5]));
   const photoFor=(k,ti,n,m)=>{const ph=PINS[k][8];return ph[(ti+hh(n,m))%ph.length];};
   const noteFor=(k,ti,n,m)=>{const nt=PINS[k][12];return nt[(ti+hh(m,n))%nt.length];};
@@ -1468,7 +1477,19 @@ function buildPan(n,cv,name){
     for(const el of vis){let h=el.dataset.bg;if(used.has(h)){const k=+el.dataset.pin||0;
         const cand=[...PINS[k%NP][8],...POOL.slice(hh(k,7)%POOL.length),...POOL];h=cand.find(x=>!used.has(x))||h;setTilePhoto(el,h);}
       used.add(h);}
-    shownBefore=new Set(vis);}
+    shownBefore=new Set(vis);regionCheck();}
+  /* header title follows the area you are looking at: the region most of the pins in the middle of the screen belong to.
+     It only switches after the wall has travelled a fair way since the last switch and the new region clearly leads. */
+  function regionCheck(){const T=wrap._ttl;if(!T)return;
+    const name=areaAt(-ox,-oy);const R=PANPOS.region||(PANPOS.region={name:AREAS.names[0],x:ox,y:oy});
+    if(name===R.name){R.x=ox;R.y=oy;return;}
+    if(Math.hypot(ox-R.x,oy-R.y)*zs<180)return;                      // a little past the edge of the area before it switches
+    Object.assign(R,{name,x:ox,y:oy});setTitle(T,name,true);}
+  function setTitle(T,txt,anim){const p=T.querySelector('p')||T;if(p.textContent===txt)return;
+    if(!anim){p.textContent=txt;return;}
+    T.style.transition='opacity .18s ease,transform .18s ease';T.style.opacity='0';T.style.transform='translateY(-6px)';
+    setTimeout(()=>{p.textContent=txt;T.style.transition='none';T.style.transform='translateY(6px)';T.getBoundingClientRect();
+      T.style.transition='opacity .25s ease,transform .25s ease';T.style.opacity='';T.style.transform='';},180);}
   const queueDedupe=()=>{if(dedupT)return;dedupT=setTimeout(()=>{dedupT=0;dedupe();},90);};
   let lastPlace=0;
   function place(){lastPlace=performance.now();
@@ -1477,6 +1498,8 @@ function buildPan(n,cv,name){
     if(wrap._mode)wrap._mode(a);
     {const root=wrap.closest('section');   // header title: white over the photo wall, black over the light group board
       if(root){if(!wrap._ttl)wrap._ttl=[...root.querySelectorAll('.t')].find(t=>!t.closest('.pan')&&/Korea, Sokcho/.test(t.textContent))||0;
+        if(wrap._ttl&&!wrap._ttl._c){const T=wrap._ttl;T._c=1;T.style.left='0px';T.style.width='390px';T.style.textAlign='center';T.style.overflow='hidden';T.style.textOverflow='ellipsis';
+          if(PANPOS.region)setTitle(T,PANPOS.region.name,false);}
         if(wrap._ttl){const c=Math.round(28+(255-28)*a);wrap._ttl.style.color=`rgb(${c},${c},${c})`;}}}
     layer0.style.opacity=a;layer0.style.visibility=a>0?'':'hidden';board.style.opacity=1-a;board.style.visibility=a<1?'':'hidden';
     board.style.pointerEvents=a<.5?'auto':'none';layer0.style.pointerEvents=a<.5?'none':'';
