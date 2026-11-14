@@ -697,6 +697,7 @@ SCREENS.arLens=SCREENS.ar;   // keeps the Figma AR screen's tab bar for the cust
   const hdr=sc.find(n=>n[0]===0&&n[1]===0&&n[2]===430&&n[3]===146);
   if(hdr)hdr[4]=hdr[4].replace(/background:linear-gradient\([^;]*\);/,'background:linear-gradient(180deg,rgba(255,255,255,0.3) 18.8%,rgba(255,255,255,0) 100%);');
   const nav=sc.find(n=>n[1]===836&&n[3]===96);if(nav)nav[4]='backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);';
+  if(nav){const pill=nav[5].find(n=>n[2]===324);if(pill)pill[4]=pill[4].replace(/background:[^;]*;/,'background:rgba(0,0,0,0.2);');}   // Figma Head Bar: black 20% + glass
   const rim=[0,0,430,932,'background:radial-gradient(52.7% 50% at 50% 47.5%,rgba(228,239,255,0) 78%,rgba(228,240,255,0.7) 100%);opacity:.6;pointer-events:none;',[]];
   sc.splice(1,0,rim);
   SCREENS.blind2={...B,id:'543:14509',bg:'background:#f5f5f5;',sc};
