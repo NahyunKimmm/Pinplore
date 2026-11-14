@@ -61,7 +61,7 @@ const st2=document.createElement('style');st2.textContent=`
   backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)}
 #mui{position:fixed;left:0;top:0;width:430px;height:0;transform-origin:0 0;pointer-events:none;z-index:60}
 #mcta{position:absolute;display:flex;align-items:center;justify-content:center;gap:8px;height:46px;border-radius:32px;
-  background:rgba(255,255,255,.8);box-shadow:0 4px 20px rgba(0,0,0,.1);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+  background:#ffffff;box-shadow:0 4px 20px rgba(0,0,0,.1);
   font:700 18px/1 Montserrat,system-ui,sans-serif;letter-spacing:-.18px;color:#1c1c1c;white-space:nowrap;opacity:0}
 #mcta svg{width:24px;height:24px;flex:none}
 #mtap{position:absolute;width:46px;height:46px;margin:-23px 0 0 -23px;border-radius:999px;background:rgba(255,255,255,.35);
@@ -145,7 +145,7 @@ if(FLOW==='pin'){
 #note .chip{height:39px!important}#note .chip.sq{width:39px!important}
 #note .chip img,#note #dict .icw{width:24px!important;height:24px!important}
 #note #dict{gap:6px!important;padding:0 16px!important}#note #dict .lbl{font-size:14px!important}
-#note #drop{padding:18px 15px!important;border-radius:32px!important;box-shadow:0 4px 20px rgba(0,0,0,.1)}
+#note #drop{padding:18px 15px!important;border-radius:32px!important;box-shadow:0 4px 20px rgba(0,0,0,.1);background:#ffffff!important}
 #note #drop span{font-size:16px!important;letter-spacing:-.32px!important}`;document.head.appendChild(css);
     const top=q('note').querySelector('.top');top.prepend(mk('div','mback',IC.back));top.append(mk('div','mclose',IC.close));
     LY.blur=blurLayer(q('cat'));
@@ -214,12 +214,14 @@ if(FLOW==='route'){
 #mroute .hd{position:absolute;left:0;top:0;width:380px;height:72.54px;display:flex;align-items:center;justify-content:space-between;box-sizing:border-box;padding:20.36px 20.36px 10.18px}
 #mroute h3{margin:0;font:700 18px/27.14px Montserrat,system-ui,sans-serif;letter-spacing:-.5654px;color:#fff;white-space:nowrap}
 #mroute .x{position:static;width:42px;height:42px;box-sizing:border-box;border:.75px solid rgba(255,255,255,.1);background:rgba(255,255,255,.1)}
-#mroute .map{position:absolute;left:0;top:72.54px;width:380px;height:233px;display:block}
+#mroute .map{position:absolute;left:0;top:72.54px;width:380px;height:233px}
+#mroute .map img{position:absolute;inset:0;width:100%;height:100%;display:block}
+#mroute .map .mb{mix-blend-mode:lighten}   /* Figma: map image 60%, blend Lighten */
 #mroute .ls{position:absolute;left:0;top:305.54px;width:380px;bottom:0;overflow:hidden}
 #mroute .ln{position:absolute;left:34.4px;top:44px;width:1.2px;height:1200px;background:rgba(255,255,255,.35)}
 #mroute .n{position:absolute;left:22px;width:26px;height:26px;border-radius:999px;background:#1c1c1c;color:#fff;font:800 12px/26px Montserrat,system-ui,sans-serif;text-align:center}
 #mroute .c{position:absolute;left:60.36px;width:299.64px;display:block}`;document.head.appendChild(st);
-    const MR=mk('div');MR.id='mroute';MR.innerHTML=`<div class="hd"><h3>Generated Route (6)</h3></div><img class="map" src="assets/route_map_figma.png" alt=""><div class="ls"><i class="ln"></i></div>`;
+    const MR=mk('div');MR.id='mroute';MR.innerHTML=`<div class="hd"><h3>Generated Route (6)</h3></div><div class="map"><img class="mb" src="assets/map_base.png" alt=""><img class="mo" src="assets/map_overlay.png" alt=""></div><div class="ls"><i class="ln"></i></div>`;
     const xx=mk('div','mclose',IC.close);xx.classList.add('x');MR.querySelector('.hd').appendChild(xx);
     /* card PNGs carry a 22px (of 477) shadow margin: scale so the visible card is 299.64 wide at x60.36 */
     const CK=299.64/433, H0={card0:431,card1:222,card2:362,card3:386};
