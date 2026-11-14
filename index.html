@@ -716,6 +716,9 @@ SCREENS.arLens=SCREENS.ar;   // keeps the Figma AR screen's tab bar for the cust
   SCREENS.blind3={...SCREENS.blind2,sc:C(sc)};GLASS.blind3=GLASS.blind;HOT.blind3=HOT.blind.map(h=>h.slice());
   /* the main Explore view (#blind, globe tab) is this merged version; 1안 (blue ground in both modes) is no longer used */
   SCREENS.blind={...SCREENS.blind2,id:B.id,sc:C(sc)};
+  {const S=SCREENS.search,ss=C(S.sc),nv=ss.find(n=>n[1]===836&&n[3]===96);
+    if(nv){nv[4]='backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);';const pl=nv[5].find(n=>n[2]===324);if(pl)pl[4]=pl[4].replace(/background:[^;]*;/,'background:rgba(0,0,0,0.2);');}
+    ss.splice(1,0,C(rim));SCREENS.search={...S,bg:'background:#f5f5f5;',sc:ss};}
 })();
 /* group board ground, Figma "iPhone 16 Plus - 47" (2053:24201): radial #639EFF → #E4EFFF 61.5% → #F9FBFF, centred bottom-middle */
 const GROUP_BG='background:radial-gradient(122% 77% at 51.4% 99%,#639EFF 0%,#E4EFFF 61.5%,#F9FBFF 100%);';
@@ -1290,14 +1293,14 @@ function buildPan(n,cv,name){
   const GAP=15;
   const wrap=document.createElement('div');wrap.className='pan';wrap.style.cssText='left:0;top:0;width:430px;height:932px;overflow:hidden;touch-action:none;';
   const layer0=document.createElement('div');layer0.style.cssText=`left:0;top:0;width:430px;height:932px;${css}`;wrap.appendChild(layer0);
-  if(name==='blind3'||name==='blind'){   // 2안 while spread → group board ground (Figma 47) + 1안 glass header/tab bar, crossfading with the zoom
+  if(name==='blind3'||name==='blind'||name==='search'){   // 2안 while spread → group board ground (Figma 47) + 1안 glass header/tab bar, crossfading with the zoom
     const blue=document.createElement('div');blue.style.cssText=`left:0;top:0;width:430px;height:100%;opacity:0;pointer-events:none;${GROUP_BG}`;wrap.appendChild(blue);
     let E=null,last=-1;const f2=v=>v.toFixed(3);
     wrap._mode=a=>{const g=Math.round((1-a)*200)/200;if(g===last)return;
       const root=wrap.closest('section');if(!root)return;last=g;
       if(!E){const all=[...root.querySelectorAll('div')].filter(d=>d._abs&&!d.closest('.pan'));
         E={rim:all.find(d=>d._abs[2]===430&&d._abs[3]===932&&/radial-gradient/.test(d.style.background)),
-           hdr:all.find(d=>d._abs[0]===0&&d._abs[1]===0&&d._abs[2]===430&&d._abs[3]===146),
+           hdr:name==='search'?null:all.find(d=>d._abs[0]===0&&d._abs[1]===0&&d._abs[2]===430&&d._abs[3]===146),
            pill:all.find(d=>Math.round(d._abs[2])===324&&Math.round(d._abs[3])===62&&d._abs[1]>800)};}
       blue.style.opacity=g;
       if(E.rim)E.rim.style.opacity=f2(.6*(1-g));
@@ -1321,7 +1324,12 @@ function buildPan(n,cv,name){
   // content by WORLD position: tiles come in clusters of 3 that share a pin (photo/memo/photo), so any area — and the
   // zoomed-out group standing for it — shows one pin's photos and notes together
   const hh=(...v)=>{let h=2166136261;for(const x of v){h^=(x|0)+0x9e3779b9;h=Math.imul(h,16777619);h^=h>>>15;}return Math.abs(h);};
-  const pinFor=(ci,n,m,ti)=>hh(ci,n,m,Math.floor(ti/3))%NP;
+  /* search focus (Figma 543:13839 검색 포커스): one column holds the pins that match the search, scaled up (167→227) in the
+     middle of the screen, its neighbours pushed aside and dimmed to 60%. Zooming out or a sideways drag past a sticky
+     threshold lets go of it and the wall returns to normal. */
+  const REPL=new Map();   // photos swapped by dedupe, per tile (column copies get reassigned as the wall moves; the swap must stick)
+  const FOC={on:false,F:0,ci:-1,n:0,ox:0,acc:0,list:null,anim:0};
+  const pinFor=(ci,n,m,ti)=>{const h=hh(ci,n,m,Math.floor(ti/3));return FOC.list&&FOC.ci===ci&&FOC.n===n?FOC.list[h%FOC.list.length]:h%NP;};
   const isMusic=t=>t[5].length&&/url\(/.test(JSON.stringify(t[5]));
   const photoFor=(k,ti,n,m)=>{const ph=PINS[k][8];return ph[(ti+hh(n,m))%ph.length];};
   const noteFor=(k,ti,n,m)=>{const nt=PINS[k][12];return nt[(ti+hh(m,n))%nt.length];};
@@ -1341,7 +1349,7 @@ function buildPan(n,cv,name){
   const NB={};const nbOf=ci=>NB[ci]||(NB[ci]=base[ci].n[5].map((a,i,T)=>{let up=-1,dn=-1,bu=1e9,bd=1e9;
     T.forEach((b,j)=>{if(j===i||Math.abs(b[0]-a[0])>1)return;const g1=a[1]-(b[1]+b[3]),g2=b[1]-(a[1]+a[3]);
       if(g1>=-1&&g1<bu){bu=g1;up=j;}if(g2>=-1&&g2<bd){bd=g2;dn=j;}});return [up,dn];}));
-  function skin(st,ci,n,m){const key=n+','+m;if(st._key===key)return;st._key=key;const tiles=base[ci].n[5];const kids=[...st.children];
+  function skin(st,ci,n,m){const key=n+','+m+(FOC.list&&FOC.ci===ci&&FOC.n===n?'f':'');if(st._key===key)return;st._key=key;const tiles=base[ci].n[5];const kids=[...st.children];
     const rr=ti=>hh(ci,n,m,ti,7)%100, short=ti=>{const t=tiles[ti];return t&&!t[5].length&&rr(ti)<40&&t[3]<190;};
     const fixes=[];
     kids.forEach((el,ti)=>{const tl=tiles[ti];if(!tl)return;const k=pinFor(ci,n,m,ti);el.dataset.pin=String(k);
@@ -1349,7 +1357,7 @@ function buildPan(n,cv,name){
         if(el._bg0==null){el._bg0=el.style.background;el._t0=parseFloat(el.style.top);el._h0=parseFloat(el.style.height);}
         el.querySelectorAll(':scope>.mz,:scope>.mzp').forEach(x=>x.remove());el.style.background=el._bg0;el.style.overflow='';el._ph=null;el._pk=k;
         el.style.top=el._t0+'px';el.style.height=el._h0+'px';el._mc=null;
-        const img=photoFor(k,ti,n,m);el.dataset.bg=img;el.dataset.tile='photo';
+        el._rk=key+':'+ti;const img=REPL.get(el._rk)||photoFor(k,ti,n,m);el.dataset.bg=img;el.dataset.tile='photo';
         const w=tl[2],h=tl[3],r=rr(ti);
         if(r<40){                               // ~40% of photo tiles carry a memo so notes are spread evenly
           if(h>=190){                           // tall: photo on top, memo below
@@ -1451,11 +1459,11 @@ function buildPan(n,cv,name){
     for(const [key,el] of cells)if(!need.has(key)){el.remove();cells.delete(key);}}
   // no photo shown twice on one screen: tiles already on screen keep theirs, newcomers take an unused photo
   const POOL=[...new Set(PINS.flatMap(p=>p[8]))];let shownBefore=new Set(),dedupT=0;
-  function setTilePhoto(el,h){el.dataset.bg=h;if(el._ph)el._ph.style.backgroundImage=IMGX(h);else if(el.dataset.tile==='photo')setImg(el,h);}
+  function setTilePhoto(el,h){el.dataset.bg=h;if(el._rk)REPL.set(el._rk,h);if(el._ph)el._ph.style.backgroundImage=IMGX(h);else if(el.dataset.tile==='photo')setImg(el,h);}
   function dedupe(){const W=wrap.getBoundingClientRect();const vis=[];const scope=parseFloat(board.style.opacity||0)>=.5?board:layer0;
     for(const el of scope.querySelectorAll('[data-bg]')){if(el.offsetParent===null)continue;const r=el.getBoundingClientRect();
       if(r.right>W.left&&r.left<W.right&&r.bottom>W.top&&r.top<W.bottom&&r.width>2)vis.push(el);}
-    vis.sort((x,y)=>(shownBefore.has(y)?1:0)-(shownBefore.has(x)?1:0));
+    const sc=e=>(e.closest('[data-foc]')?2:0)+(shownBefore.has(e)?1:0);vis.sort((x,y)=>sc(y)-sc(x));   // the focused search column keeps its photos
     const used=new Set();
     for(const el of vis){let h=el.dataset.bg;if(used.has(h)){const k=+el.dataset.pin||0;
         const cand=[...PINS[k%NP][8],...POOL.slice(hh(k,7)%POOL.length),...POOL];h=cand.find(x=>!used.has(x))||h;setTilePhoto(el,h);}
@@ -1478,37 +1486,59 @@ function buildPan(n,cv,name){
     if(a<=0)return;
     const sb=Math.max(zs,ZT0),cy=CY();layer.style.transform=sb===1?'':`translate(${(CX*(1-sb)).toFixed(2)}px,${(cy*(1-sb)).toFixed(2)}px) scale(${sb.toFixed(4)})`;
     const x0=CX-CX/sb-20,x1=CX+CX/sb+20,y0=cy-cy/sb-20,y1=cy+(WH()-cy)/sb+20;
-    for(const I of inst){const X=I.c.bx+I.i*P+mod(ox,P)-P;const vis=X+I.cw>x0&&X<x1;
+    const Fv=FOC.F,fc=FOC.ci>=0?base[FOC.ci]:null,fcx=fc?fc.bx+ox+FOC.n*P+fc.n[2]/2:0;
+    for(const I of inst){let X=I.c.bx+I.i*P+mod(ox,P)-P;
       const Y0=mod(I.c.by+oy,I.Pc)-2*I.Pc;
       const wn=I.i-1-Math.floor(ox/P),wm0=-2-Math.floor((I.c.by+oy)/I.Pc);
-      I.copies.forEach((st,j)=>{const Y=Y0+j*I.Pc;const on=vis&&Y+I.Pc>y0&&Y<y1;
-        if(on)skin(st,I.ci,wn,wm0+j);st.style.display=on?'':'none';if(on)st.style.transform=`translate3d(${X}px,${Y}px,0)`;});}
+      const foc=Fv>0&&I.ci===FOC.ci&&wn===FOC.n,k=foc?1+(227/167-1)*Fv:1,xc=X+I.cw/2;
+      if(Fv>0&&!foc)X+=(xc<fcx?-1:1)*30*Fv;
+      if(foc)X=xc-I.cw*k/2;
+      const vis=X+I.cw*k>x0&&X<x1,op=Fv>0&&!foc?(1-.4*Fv).toFixed(3):'';
+      I.copies.forEach((st,j)=>{let Y=Y0+j*I.Pc;if(foc)Y=cy+(Y-cy)*k;const on=vis&&Y+I.Pc*k>y0&&Y<y1;
+        if(on)skin(st,I.ci,wn,wm0+j);st.style.display=on?'':'none';
+        if(foc)st.dataset.foc='1';else delete st.dataset.foc;
+        if(on){st.style.transformOrigin='0 0';st.style.transform=`translate3d(${X}px,${Y}px,0)`+(k!==1?` scale(${k.toFixed(4)})`:'');st.style.opacity=op;}});}
   }
   place();cv.appendChild(wrap);
+  if(name==='search')setTimeout(()=>enterFocus('Sokcho'),380);   // the searched term (the search field reads "Sokcho")
   // drag + inertia, tap / long-press
   let sx,sy,lx,ly,lt,vx=0,vy=0,moved=false,down=false,lp=null,tileEl=null,raf=0;
   const stop=()=>{cancelAnimationFrame(raf);raf=0;};
   function panBy(dx,dy){ox+=dx/zs;oy+=dy/zs;bx+=dx/(GK*zs);by+=dy/(GK*zs);}
+  const STICK=72, DAMP=.28;     // sideways drag while focused: moves at 28% until 72px of finger travel, then lets go
+  function focAnim(to,dur,toOx){cancelAnimationFrame(FOC.anim);const F0=FOC.F,o0=ox,t0=performance.now();
+    (function f(now){const q=Math.min(1,(now-t0)/dur),e=1-Math.pow(1-q,3);FOC.F=F0+(to-F0)*e;
+      if(toOx!=null)panBy((o0+(toOx-o0)*e-ox)*zs,0);place();if(q<1)FOC.anim=requestAnimationFrame(f);})(t0);}
+  function enterFocus(q){if(zs<ZT1)return;q=q.toLowerCase();
+    const list=PINS.map((P,i)=>i).filter(i=>(PINS[i][0]+' '+PINS[i][1]).toLowerCase().includes(q));if(!list.length)return;
+    let best=null;base.forEach((c,ci)=>{const cw=c.n[2],kk=Math.round((215.5-cw/2-c.bx-ox)/P),t=215.5-cw/2-c.bx-kk*P;
+      if(!best||Math.abs(t-ox)<Math.abs(best.t-ox))best={ci,kk,t};});
+    Object.assign(FOC,{on:true,list,ci:best.ci,n:best.kk,ox:best.t,acc:0});place();focAnim(1,520,best.t);}
+  function releaseFocus(){if(!FOC.on)return;FOC.on=false;FOC.acc=0;focAnim(0,380,null);}
+  function springBack(){if(FOC.on){FOC.acc=0;focAnim(1,320,FOC.ox);}}
   function glide(){vx*=0.95;vy*=0.95;panBy(vx,vy);place();if(Math.abs(vx)+Math.abs(vy)>0.2)raf=requestAnimationFrame(glide);else raf=0;}
   wrap.addEventListener('pointerdown',e=>{if(pinch||pts.size>1){clearTimeout(lp);return;}const wasGliding=!!raf;stop();down=true;moved=wasGliding;sx=lx=e.clientX;sy=ly=e.clientY;lt=performance.now();vx=vy=0;
-    tileEl=e.target.closest('[data-tile]');clearTimeout(lp);
+    tileEl=e.target.closest('[data-tile]');clearTimeout(lp);FOC.acc=0;
     if(tileEl&&tileEl.dataset.tile==='photo'&&!moved)lp=setTimeout(()=>{if(!moved){down=false;PIN=tileEl.dataset.pin;if(typeof bookmarkDrag==='function')bookmarkDrag(tileEl,lx,ly);else run('go:bm1');}},480);
     try{wrap.setPointerCapture(e.pointerId);}catch(_){}});
   wrap.addEventListener('pointermove',e=>{if(!down||pinch)return;const s=(SCALE||1);
     if(Math.abs(e.clientX-sx)+Math.abs(e.clientY-sy)>6){moved=true;clearTimeout(lp);}
     if(!moved)return;const now=performance.now(),dt=Math.max(1,now-lt);
-    const dx=(e.clientX-lx)/s,dy=(e.clientY-ly)/s;panBy(dx,dy);place();
-    vx=vx*0.2+dx*(16/dt)*0.8;vy=vy*0.2+dy*(16/dt)*0.8;lx=e.clientX;ly=e.clientY;lt=now;});
-  wrap.addEventListener('pointerup',e=>{clearTimeout(lp);if(!down)return;down=false;
+    const dx=(e.clientX-lx)/s,dy=(e.clientY-ly)/s;let mx=dx;
+    if(FOC.on){FOC.acc+=dx;if(Math.abs(FOC.acc)>STICK)releaseFocus();else mx=dx*DAMP;}
+    panBy(mx,dy);place();
+    vx=FOC.on?0:vx*0.2+mx*(16/dt)*0.8;vy=vy*0.2+dy*(16/dt)*0.8;lx=e.clientX;ly=e.clientY;lt=now;});
+  wrap.addEventListener('pointerup',e=>{clearTimeout(lp);if(!down)return;down=false;if(FOC.on&&FOC.acc)springBack();
     if(moved){if(performance.now()-lt<80&&Math.abs(vx)+Math.abs(vy)>0.5)raf=requestAnimationFrame(glide);}
     else if(tileEl){wrap._tap=tileEl.dataset.pin;wrap._tapEl=tileEl;}});
   wrap.addEventListener('pointercancel',()=>{clearTimeout(lp);down=false;moved=true;});
   wrap.addEventListener('click',e=>{e.stopPropagation();if(moved)return;const t=wrap._tap;wrap._tap=null;if(t){PIN=t;PINSTACK=null;const te=wrap._tapEl;const m=te&&te.dataset.tile==='photo'&&(te.style.background||'').match(/img\/([0-9a-f]{10})/);PINPHOTO=(te&&te.dataset.bg)||(m?m[1]:null);run('go:detail');}else flashHint();});
   wrap.addEventListener('wheel',e=>{e.preventDefault();stop();
     if(e.ctrlKey){const [mx,my]=devPt(e);zoomAt(Math.max(PAN_MIN*.85,Math.min(1.08,zs*Math.exp(-e.deltaY*.008))),mx,my);clearTimeout(wrap._zt);wrap._zt=setTimeout(settleZoom,180);}
-    else{panBy(-e.deltaX,-e.deltaY);place();}},{passive:false});
+    else{let mx=-e.deltaX;if(FOC.on&&mx){FOC.acc+=mx;if(Math.abs(FOC.acc)>STICK)releaseFocus();else{mx*=DAMP;clearTimeout(wrap._sb);wrap._sb=setTimeout(springBack,160);}}
+      panBy(mx,-e.deltaY);place();}},{passive:false});
   // pinch to zoom out (and back in up to the default size); the point between the fingers stays put
-  function zoomAt(s,mx,my){const cy=CY(),sb0=zs,sb1=s,g0=GK*zs,g1=GK*s;
+  function zoomAt(s,mx,my){if(FOC.on&&s<zs-.002)releaseFocus();const cy=CY(),sb0=zs,sb1=s,g0=GK*zs,g1=GK*s;
     const wx=CX+(mx-CX)/sb0-ox,wy=cy+(my-cy)/sb0-oy,qx=CX+(mx-CX)/g0-bx,qy=cy+(my-cy)/g0-by;
     zs=s;ox=CX+(mx-CX)/sb1-wx;oy=cy+(my-cy)/sb1-wy;bx=CX+(mx-CX)/g1-qx;by=cy+(my-cy)/g1-qy;place();}
   let zanim=0;
