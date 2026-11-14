@@ -89,7 +89,7 @@ const TILES=(dx=0)=>[[131+dx,257,167,85,'go:detail','','Open pin'],[321+dx,190,1
   [131+dx,651,167,208,'go:bm1','','Save photo to a folder'],[131+dx,0,167,250,'go:detail','','Open pin']];
 const HOT={
   pair:[[20,779,390,57,'swap:home','f','Set up'],[366,402,44,44,'swap:home','f','Close'],[140,850,150,40,'toast:Learn more about pairing','f','Learn More']],
-  home:[[20,180,390,65,'go:search','','Search'],
+  home:[[20,180,390,65,'go:homeSearch','','Search'],
     [0,395,430,370,'go:detail','','Open pin'],[0,840,430,150,'go:detail','','Open pin'],[0,1029,430,370,'go:detail','','Open pin'],[0,1474,430,370,'go:detail','','Open pin'],[0,1919,430,150,'go:detail','','Open pin'],[0,2108,430,370,'go:detail','','Open pin'],
     [20,2665,318,235,'go:detail','','Open pin'],[380,2610,40,40,'go:ranked','','See all'],[50,3030,340,390,'go:detail','','Open hidden gem'],[380,2955,40,40,'go:gems','','See all hidden gems'],...NAV],
   blind:[[20,84,50,50,'sheet:filter','','Filter'],[360,84,50,50,'go:search','','Search'],[396,419,34,95,'go:curation','','Open curation'],...NAV],
@@ -691,6 +691,25 @@ const CUSTOM={
     return root;},
 };
 SCREENS.arLens=SCREENS.ar;   // keeps the Figma AR screen's tab bar for the custom AR lens
+/* Home → search: Figma Home/검색하면? (417:2851) — blue home header with the search bar, white sheet with
+   Unique Finds · Near by the Spotlight · Area Vibe Keyword (long cards). Composed from the same Figma nodes. */
+(function(){const C=n=>JSON.parse(JSON.stringify(n));
+  const cur=SCREENS.curation.sc.find(n=>n[1]===1&&n[2]===430&&n[3]>2000)[5][0];        // content column (x20,y176)
+  const sec=cur[5], area=C(sec[2]);area[5]=[C(area[5][0])];                              // Area Vibe: title + chips only
+  const longs=C(SCREENS.home.sc[2][5][0][5][0][5][1][5].slice(0,4));let y=0;longs.forEach(n=>{n[0]=-20;n[1]=89+y;y+=n[3];});
+  area[5].push(...longs);area[3]=89+y;
+  const col=[20,46,410,738+area[3],"",[C(sec[0]),C(sec[1]),area]];
+  const H=156+46+col[3]+130;
+  const sheet=[0,156,430,H-156,"background:#ffffff;border-radius:30px 30px 0px 0px;",[col]];
+  const hdr=C(SCREENS.search.sc.find(n=>n[0]===0&&n[1]===0&&n[2]===430&&n[3]===146));hdr[4]='';
+  const hn=[...SCREENS.home.fx,...SCREENS.home.sc].find(n=>n[2]===430&&n[3]===96)||SCREENS.search.sc.find(n=>n[1]===836&&n[3]===96),nav=C(hn);nav[1]=H-96;
+  SCREENS.homeSearch={id:'417:2851',h:H,w:430,bg:SCREENS.home.bg,clip:true,sc:[sheet,hdr,nav],fx:[]};
+  const top=156+46+1, ly=top+738+89, L=longs.map(n=>n[3]);
+  HOT.homeSearch=[[20,84,50,50,'back','f','Back'],[82,84,328,50,'go:search','f','Search the wall'],
+    [20,top+51,318,190,'go:detail','','Open pin'],[350,top+51,80,190,'go:detail','','Open pin'],[386,top,40,31,'go:curation','','See all unique finds'],
+    [20,top+346+97,318,190,'go:detail','','Open pin'],[350,top+346+97,80,190,'go:detail','','Open pin'],
+    ...L.map((h,i)=>[0,ly+L.slice(0,i).reduce((a,b)=>a+b,0),430,h-62,'go:detail','','Open pin']),...NAV];
+})();
 for(const k of Object.keys(CUSTOM))SCREENS[k]={custom:1,h:932,bg:'background:#f5f5f5',sc:[],fx:[]};
 
 /* Folder (Pins / AI Itinerary): two states, switched by one swipe.
