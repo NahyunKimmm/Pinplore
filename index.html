@@ -705,7 +705,11 @@ SCREENS.arLens=SCREENS.ar;   // keeps the Figma AR screen's tab bar for the cust
   /* Blind view · 3안 (#blind3): 2안's look while the canvas is spread out, 1안's look (blue gradient ground,
      white glass header and tab bar) once you pinch into the group board. The two crossfade with the zoom (see buildPan). */
   SCREENS.blind3={...SCREENS.blind2,sc:C(sc)};GLASS.blind3=GLASS.blind;HOT.blind3=HOT.blind.map(h=>h.slice());
+  /* the main Explore view (#blind, globe tab) is this merged version; 1안 (blue ground in both modes) is no longer used */
+  SCREENS.blind={...SCREENS.blind2,id:B.id,sc:C(sc)};
 })();
+/* group board ground, Figma "iPhone 16 Plus - 47" (2053:24201): radial #639EFF → #E4EFFF 61.5% → #F9FBFF, centred bottom-middle */
+const GROUP_BG='background:radial-gradient(122% 77% at 51.4% 99%,#639EFF 0%,#E4EFFF 61.5%,#F9FBFF 100%);';
 /* Home → search: Figma Home/검색하면? (417:2851) — blue home header with the search bar, white sheet with
    Unique Finds · Near by the Spotlight · Area Vibe Keyword (long cards). Composed from the same Figma nodes. */
 (function(){const C=n=>JSON.parse(JSON.stringify(n));
@@ -1277,8 +1281,8 @@ function buildPan(n,cv,name){
   const GAP=15;
   const wrap=document.createElement('div');wrap.className='pan';wrap.style.cssText='left:0;top:0;width:430px;height:932px;overflow:hidden;touch-action:none;';
   const layer0=document.createElement('div');layer0.style.cssText=`left:0;top:0;width:430px;height:932px;${css}`;wrap.appendChild(layer0);
-  if(name==='blind3'){   // 3안: crossfade 2안 (spread) → 1안 (group board) with the zoom
-    const blue=document.createElement('div');blue.style.cssText=`left:0;top:0;width:430px;height:100%;opacity:0;pointer-events:none;${SCREENS.blind.bg}`;wrap.appendChild(blue);
+  if(name==='blind3'||name==='blind'){   // 2안 while spread → group board ground (Figma 47) + 1안 glass header/tab bar, crossfading with the zoom
+    const blue=document.createElement('div');blue.style.cssText=`left:0;top:0;width:430px;height:100%;opacity:0;pointer-events:none;${GROUP_BG}`;wrap.appendChild(blue);
     let E=null,last=-1;const f2=v=>v.toFixed(3);
     wrap._mode=a=>{const g=Math.round((1-a)*200)/200;if(g===last)return;
       const root=wrap.closest('section');if(!root)return;last=g;
