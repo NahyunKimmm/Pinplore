@@ -218,7 +218,7 @@ if(FLOW==='route'){
 #mroute .map img{position:absolute;inset:0;width:100%;height:100%;display:block}
 #mroute .map .mb{mix-blend-mode:lighten}   /* Figma: map image 60%, blend Lighten */
 #mroute .ls{position:absolute;left:0;top:305.54px;width:380px;bottom:0;overflow:hidden}
-#mroute .ln{position:absolute;left:34.4px;top:44px;width:1.2px;height:1200px;background:rgba(255,255,255,.35)}
+#mroute .ln{position:absolute;left:34.4px;top:62px;width:1.2px;height:1200px;background:rgba(255,255,255,.35)}
 #mroute .n{position:absolute;left:22px;width:26px;height:26px;border-radius:999px;background:#1c1c1c;color:#fff;font:800 12px/26px Montserrat,system-ui,sans-serif;text-align:center}
 #mroute .c{position:absolute;left:60.36px;width:299.64px;display:block}`;document.head.appendChild(st);
     const MR=mk('div');MR.id='mroute';MR.innerHTML=`<div class="hd"><h3>Generated Route (6)</h3></div><div class="map"><img class="mb" src="assets/map_base.png" alt=""><img class="mo" src="assets/map_overlay.png" alt=""></div><div class="ls"><i class="ln"></i></div>`;
