@@ -1453,6 +1453,9 @@ function buildPan(n,cv,name){
     PANPOS.x=ox;PANPOS.y=oy;PANPOS.s=zs;PANPOS.bx=bx;PANPOS.by=by;queueDedupe();
     const a=Math.min(1,Math.max(0,(zs-ZT0)/(ZT1-ZT0)));      // 1 = dense canvas only, 0 = group board only
     if(wrap._mode)wrap._mode(a);
+    {const root=wrap.closest('section');   // header title: white over the photo wall, black over the light group board
+      if(root){if(!wrap._ttl)wrap._ttl=[...root.querySelectorAll('.t')].find(t=>!t.closest('.pan')&&/Korea, Sokcho/.test(t.textContent))||0;
+        if(wrap._ttl){const c=Math.round(28+(255-28)*a);wrap._ttl.style.color=`rgb(${c},${c},${c})`;}}}
     layer0.style.opacity=a;layer0.style.visibility=a>0?'':'hidden';board.style.opacity=1-a;board.style.visibility=a<1?'':'hidden';
     board.style.pointerEvents=a<.5?'auto':'none';layer0.style.pointerEvents=a<.5?'none':'';
     const cur=[...cv.children].filter(e=>e.style&&e.style.left==='396px'||(e.dataset&&/curation/.test(e.dataset.act||'')));
