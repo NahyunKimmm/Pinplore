@@ -1327,8 +1327,8 @@ function buildPan(n,cv,name){
   /* search focus (Figma 543:13839 검색 포커스): one column holds the pins that match the search, scaled up (167→227) in the
      middle of the screen, its neighbours pushed aside and dimmed to 60%. Zooming out or a sideways drag past a sticky
      threshold lets go of it and the wall returns to normal. */
-  const REPL=new Map();   // photos swapped by dedupe, per tile (column copies get reassigned as the wall moves; the swap must stick)
-  const FOC={on:false,F:0,ci:-1,n:0,ox:0,acc:0,list:null,anim:0};
+  const REPL=PAN_REPL;   // photos swapped by dedupe, per tile (column copies get reassigned as the wall moves; the swap must stick)
+  const FOC={on:false,F:0,ci:-1,n:0,ox:0,acc:0,list:null,anim:0};if(SEARCH_COL)Object.assign(FOC,SEARCH_COL);
   const pinFor=(ci,n,m,ti)=>{const h=hh(ci,n,m,Math.floor(ti/3));return FOC.list&&FOC.ci===ci&&FOC.n===n?FOC.list[h%FOC.list.length]:h%NP;};
   const isMusic=t=>t[5].length&&/url\(/.test(JSON.stringify(t[5]));
   const photoFor=(k,ti,n,m)=>{const ph=PINS[k][8];return ph[(ti+hh(n,m))%ph.length];};
@@ -1470,7 +1470,8 @@ function buildPan(n,cv,name){
       used.add(h);}
     shownBefore=new Set(vis);}
   const queueDedupe=()=>{if(dedupT)return;dedupT=setTimeout(()=>{dedupT=0;dedupe();},90);};
-  function place(){
+  let lastPlace=0;
+  function place(){lastPlace=performance.now();
     PANPOS.x=ox;PANPOS.y=oy;PANPOS.s=zs;PANPOS.bx=bx;PANPOS.by=by;queueDedupe();
     const a=Math.min(1,Math.max(0,(zs-ZT0)/(ZT1-ZT0)));      // 1 = dense canvas only, 0 = group board only
     if(wrap._mode)wrap._mode(a);
@@ -1513,8 +1514,14 @@ function buildPan(n,cv,name){
     const list=PINS.map((P,i)=>i).filter(i=>(PINS[i][0]+' '+PINS[i][1]).toLowerCase().includes(q));if(!list.length)return;
     let best=null;base.forEach((c,ci)=>{const cw=c.n[2],kk=Math.round((215.5-cw/2-c.bx-ox)/P),t=215.5-cw/2-c.bx-kk*P;
       if(!best||Math.abs(t-ox)<Math.abs(best.t-ox))best={ci,kk,t};});
-    Object.assign(FOC,{on:true,list,ci:best.ci,n:best.kk,ox:best.t,acc:0});place();focAnim(1,520,best.t);}
-  function releaseFocus(){if(!FOC.on)return;FOC.on=false;FOC.acc=0;focAnim(0,380,null);}
+    Object.assign(FOC,{on:true,list,ci:best.ci,n:best.kk,ox:best.t,acc:0});SEARCH_COL={list,ci:best.ci,n:best.kk};place();focAnim(1,520,best.t);}
+  /* once let go, the search screen hands over to the plain blind view (filter · title · search icons) as soon as the wall
+     comes to rest; the matched column keeps its pins so nothing jumps */
+  function releaseFocus(){if(!FOC.on)return;FOC.on=false;FOC.acc=0;focAnim(0,380,null);
+    if(name!=='search')return;clearInterval(FOC.wait);
+    FOC.wait=setInterval(()=>{if(!wrap.isConnected){clearInterval(FOC.wait);return;}
+      if(down||pinch||pts.size||performance.now()-lastPlace<260)return;clearInterval(FOC.wait);
+      if(current&&current.dataset.screen==='search')run(stack[stack.length-2]==='blind'?'back':'swap:blind');},90);}
   function springBack(){if(FOC.on){FOC.acc=0;focAnim(1,320,FOC.ox);}}
   function glide(){vx*=0.95;vy*=0.95;panBy(vx,vy);place();if(Math.abs(vx)+Math.abs(vy)>0.2)raf=requestAnimationFrame(glide);else raf=0;}
   wrap.addEventListener('pointerdown',e=>{if(pinch||pts.size>1){clearTimeout(lp);return;}const wasGliding=!!raf;stop();down=true;moved=wasGliding;sx=lx=e.clientX;sy=ly=e.clientY;lt=performance.now();vx=vy=0;
@@ -1566,6 +1573,7 @@ function buildPan(n,cv,name){
   wrap.addEventListener('touchmove',e=>{if(e.touches.length>1)e.preventDefault();},{passive:false});
 }
 let PIN=null;
+let SEARCH_COL=null;const PAN_REPL=new Map();   // the column that showed the last search's pins (kept when the view returns to normal)
 
 /* Make overflowing rows / clipped panels scrollable */
 function makeScrollers(root,S){
