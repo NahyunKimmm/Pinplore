@@ -14,6 +14,7 @@
 :root{--stage:#e7eaef;--bezel:#14161a;--hint:rgba(60,130,255,.28);--hint-line:#3c82ff;--toast-bg:#1c1c1c;--toast-fg:#fff;color-scheme:light}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--stage:#16181c;--bezel:#000;color-scheme:dark}}
 :root[data-theme="dark"]{--stage:#16181c;--bezel:#000;color-scheme:dark}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
 html,body{height:100%}
 body{margin:0;background:var(--stage);display:flex;align-items:center;justify-content:center;overflow:hidden;
   padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0}
@@ -820,7 +821,21 @@ const TOG={"v17xz2et": "heart", "v1gos3jc": "bm", "vexzty2": "heart", "vb4eiif":
 const NS='http://www.w3.org/2000/svg';
 const device=document.getElementById('device'), holder=document.getElementById('holder');
 
-let SCALE=1,DH=932;const ZOOM_OK=typeof CSS!=='undefined'&&CSS.supports&&CSS.supports('zoom','2');
+let SCALE=1,DH=932;let ZOOM_OK=typeof CSS!=='undefined'&&CSS.supports&&CSS.supports('zoom','2');
+/* Some iOS builds apply CSS zoom to boxes but not to text, so type comes out ~1/s too big.
+   Probe once: if text doesn't shrink with zoom, fall back to transform:scale. */
+let ZOOM_CHECKED=false;
+function zoomTextOK(s){
+  if(Math.abs(s-1)<0.02)return true;
+  const p=document.createElement('span');
+  p.style.cssText='position:absolute;left:0;top:0;visibility:hidden;white-space:nowrap;font:500 15px Manrope,system-ui,sans-serif;line-height:normal';
+  p.textContent='Pair Sam\u2019s SmartGlass with Pinplore app? cozy energetic serene';
+  device.appendChild(p);
+  device.style.zoom=1;const w1=p.getBoundingClientRect().width;
+  device.style.zoom=s;const w2=p.getBoundingClientRect().width;
+  p.remove();
+  return Math.abs(w2/(w1*s)-1)<0.025;
+}
 /* Phones: fill the screen width and use the real screen height (DH). Screens are drawn in 430x932 space;
    anchor() then pins bottom bars / sheets to the real bottom edge, and the middle scrolls if it does not fit. */
 function fit(){
@@ -835,6 +850,7 @@ function fit(){
   if(bare){s=vw/430;dh=Math.round(Math.max(560,Math.min(1200,vh/s)));}
   else s=Math.min((vw-32)/430,(vh-56)/932,1.15);
   // CSS zoom (not transform:scale) so backdrop-filter keeps honouring clip-path (folder-shaped blur)
+  if(ZOOM_OK&&!ZOOM_CHECKED){ZOOM_CHECKED=true;try{if(!zoomTextOK(s)){ZOOM_OK=false;device.style.zoom='';}}catch(e){}}
   if(ZOOM_OK){device.style.zoom=s;device.style.transform='';}else device.style.transform=`scale(${s})`;
   device.style.height=dh+'px';device.style.setProperty('--dy',(dh-932)+'px');
   SCALE=s;holder.style.width=430*s+'px';holder.style.height=dh*s+'px';
