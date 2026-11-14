@@ -576,6 +576,14 @@ function lgUI(root){
   root.querySelectorAll('.achip').forEach(b=>LG.apply(b,0,0,null,'s',true,{keepBg:true,noDrop:true}));
 }
 const CUSTOM={
+  /* AR lens = the smart-glass flows (Explore · Drop a Pin · Create route), laid out for the phone (ar/) */
+  ar(){const root=document.createElement('section');root.className='scr';root.dataset.screen='ar';root.style.cssText='background:#000';
+    const sc=h('div',{cls:'sc',style:'overflow:hidden'});sc.appendChild(h('div',{cls:'cv',style:'height:932px'}));
+    const fx=h('div',{cls:'fx'});
+    const fr=document.createElement('iframe');fr.src='ar/index.html';fr.title='AR lens';fr.setAttribute('allow','autoplay; fullscreen');
+    fr.style.cssText='position:absolute;left:0;top:0;width:430px;height:calc(932px + var(--dy,0px));border:0;background:#000;pointer-events:auto';
+    fx.appendChild(fr);navFrom('arLens',fx);fx.querySelectorAll('[data-act]').forEach(e=>e.style.pointerEvents='auto');
+    root.append(sc,fx);return root;},
   ranked(){const {root,cv}=pageShell('ranked',{navSrc:'home',plain:true});
     const cities=['All','Sokcho','Busan','Seoul','Jeju','Gangneung','Jeonju'];
     const head=h('div',{cls:'ui',style:'position:absolute;left:0;top:150px;width:430px'},
@@ -677,6 +685,7 @@ const CUSTOM={
       h('div',{cls:'btn','data-act':'back|toast:Itinerary saved'},'Save changes')));
     return root;},
 };
+SCREENS.arLens=SCREENS.ar;   // keeps the Figma AR screen's tab bar for the custom AR lens
 for(const k of Object.keys(CUSTOM))SCREENS[k]={custom:1,h:932,bg:'background:#f5f5f5',sc:[],fx:[]};
 
 /* Folder (Pins / AI Itinerary): two states, switched by one swipe.

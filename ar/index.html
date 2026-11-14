@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Pinplore AR</title>
+<style>
+/* AR lens for the phone app: the smart-glass flows (Explore · Drop a Pin · Create route) in portrait.
+   Each flow lives in its own frame for the whole session and is restarted in place. */
+:root{--pin-a:#6cee52;color-scheme:dark}
+html,body{margin:0;height:100%;background:#000;overflow:hidden}
+.screen{position:fixed;inset:0;background:#000}
+.screen iframe{position:absolute;inset:0;width:100%;height:100%;border:0;opacity:0;visibility:hidden}
+#hud{position:fixed;left:0;top:0;width:430px;transform-origin:0 0;pointer-events:none;z-index:6}
+.head{position:absolute;left:131.3px;top:54px;width:167.35px;height:64px;border-radius:999px;background:rgba(0,0,0,.3);
+  backdrop-filter:blur(5.2px);-webkit-backdrop-filter:blur(5.2px);box-shadow:0 4px 21px rgba(0,0,0,.1);pointer-events:auto;transition:opacity .45s ease}
+.head .knob{position:absolute;top:6.2px;left:6.2px;width:51.65px;height:51.65px;border-radius:999px;background:#fff;
+  box-shadow:0 2px 8px rgba(0,0,0,.15);transition:transform .55s cubic-bezier(.34,1.35,.5,1)}
+.head button{all:unset;cursor:pointer;position:absolute;top:6.2px;width:51.65px;height:51.65px;border-radius:999px;-webkit-tap-highlight-color:transparent}
+.head button:focus,.head button:focus-visible{outline:none}
+.head button img{position:absolute;left:50%;top:50%;width:30px;height:30px;margin:-15px 0 0 -15px;transition:opacity .35s ease}
+.head button .a{opacity:0}
+.head button[aria-current="true"] .a{opacity:1}
+.head button[aria-current="true"] .i{opacity:0}
+@media (prefers-reduced-motion:reduce){.head .knob,.head button img{transition:none}}
+</style>
+</head>
+<body>
+<div class="screen" id="screen"></div>
+<div id="hud">
+  <div class="head" id="head">
+    <span class="knob" id="knob"></span>
+    <button type="button" data-tab="0" aria-label="Explore"><img class="i" src="shell/ic0.png" alt=""><img class="a" src="shell/ic0a.png" alt=""></button>
+    <button type="button" data-tab="1" aria-label="Drop a Pin"><img class="i" src="shell/ic1.png" alt=""><img class="a" src="shell/ic1a.png" alt=""></button>
+    <button type="button" data-tab="2" aria-label="Create route"><img class="i" src="shell/ic2.png" alt=""><img class="a" src="shell/ic2a.png" alt=""></button>
+  </div>
+</div>
+<script>
+const FLOWS=[{src:'explore/index.html',dur:16.6},{src:'pin/index.html',dur:13.6},{src:'route/index.html',dur:33}];
+const HOLD=1.4, OUT=.55, IN=.75, V=Date.now();
+const $=id=>document.getElementById(id);
+const tabs=[...document.querySelectorAll('.head button')];
+let idx=-1, endAt=0, seq=0;
+const MSG=FLOWS.map(()=>({t:0,head:1,ready:false}));
+addEventListener('message',e=>{const i=frames.findIndex(f=>f.contentWindow===e.source),d=e.data;
+  if(i<0||!d||!('ppT' in d))return;MSG[i].t=d.ppT;MSG[i].head=d.ppHead;if(d.ppDur)FLOWS[i].dur=d.ppDur;if(d.ppReady&&!MSG[i].ready){MSG[i].ready=true;MSG[i].res?.()}});
+const call=(i,k,...a)=>{try{const fn=frames[i].contentWindow[k];if(typeof fn==='function')return fn(...a)}catch(e){
+  if(k==='__t')return MSG[i].t;try{frames[i].contentWindow.postMessage({pp:k.slice(2)},'*')}catch(_){}}};
+const frames=FLOWS.map((f,i)=>{const el=document.createElement('iframe');el.title=f.src.split('/')[0];el.setAttribute('allow','autoplay');
+  $('screen').appendChild(el);
+  f.ready=new Promise(res=>{el.onload=()=>{const w=el.contentWindow;
+    (function wait(){try{if(w.__ready){f.dur=w.__DUR||f.dur;return res()}}catch(e){MSG[i].res=res;if(MSG[i].ready)res();return}setTimeout(wait,30)})()}});
+  return el});
+frames[0].src=FLOWS[0].src+`?embed=1&m=1&v=${V}`;
+FLOWS[0].ready.then(()=>frames.forEach((el,i)=>{if(i)el.src=FLOWS[i].src+`?embed=1&m=1&v=${V}`}));
+
+tabs.forEach((b,i)=>{b.style.left=(6.2+51.65*i)+'px';b.onclick=e=>{e.stopPropagation();go(i)}});
+function placeHud(){$('hud').style.transform=`scale(${innerWidth/430})`}
+addEventListener('resize',placeHud);placeHud();
+function setTab(i){tabs.forEach((b,j)=>b.setAttribute('aria-current',j===i));$('knob').style.transform=`translateX(${51.65*i}px)`}
+
+const ease='cubic-bezier(.4,0,.2,1)';
+function leave(i){const f=frames[i];f.style.transition=`transform ${OUT}s ${ease}, filter ${OUT}s ${ease}, opacity ${OUT}s ${ease} ${IN-.2}s`;
+  f.style.transform='scale(1.04)';f.style.filter='blur(14px)';f.style.opacity=0;f.style.zIndex=1;
+  setTimeout(()=>{if(idx!==i){call(i,'__pause');f.style.visibility='hidden'}},(OUT+IN)*1000)}
+function enter(i){const f=frames[i];f.style.visibility='visible';f.style.transition='none';f.style.opacity=0;f.style.transform='scale(.97)';f.style.filter='blur(14px)';f.style.zIndex=2;
+  f.getBoundingClientRect();f.style.transition=`opacity ${IN}s ${ease}, transform ${IN}s ${ease}, filter ${IN}s ${ease}`;
+  f.style.opacity=1;f.style.transform='none';f.style.filter='none'}
+async function go(i){i=(i+FLOWS.length)%FLOWS.length;const my=++seq;setTab(i);
+  await FLOWS[i].ready;if(my!==seq)return;
+  const prev=idx;idx=i;endAt=0;call(i,'__restart');
+  if(prev===i){enter(i);return}if(prev>=0)leave(prev);setTimeout(()=>{if(idx===i)enter(i)},prev>=0?120:0)}
+function tick(){
+  if(idx>=0){const f=FLOWS[idx],t=call(idx,'__t')??0;
+    if(t>=f.dur){if(!endAt)endAt=performance.now();else if(performance.now()-endAt>HOLD*1000){endAt=0;go(idx+1)}}
+    let o=1;try{const d=frames[idx].contentDocument,h=d.getElementById('head')||d.getElementById('headA');if(h){const v=h.style.opacity;o=v===''?1:+v}}catch(e){o=MSG[idx].head}
+    $('head').style.opacity=o;$('head').style.pointerEvents=o>.5?'auto':'none'}
+  requestAnimationFrame(tick)}
+document.addEventListener('visibilitychange',()=>{if(idx<0)return;if(document.hidden)call(idx,'__pause');else call(idx,'__resume')});
+tick();go(0);
+</script>
+</body>
+</html>

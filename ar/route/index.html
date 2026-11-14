@@ -1,0 +1,401 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Pinplore Glass · Route</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:#000;overflow:hidden}
+body{display:flex;align-items:center;justify-content:center}
+#vp{position:relative;width:1210px;height:834px;overflow:hidden;flex:none;transform-origin:center;background:#7d7570}
+.abs{position:absolute;left:0;top:0;will-change:transform,opacity}
+img{display:block}
+.bg{position:absolute;width:1210px;height:834px;object-fit:none}
+#bg{left:0;top:0;width:1210px;height:834px}  /* image 266, already cropped to the Figma iPad frame */
+.glass{backdrop-filter:blur(26px) saturate(1.1);-webkit-backdrop-filter:blur(26px) saturate(1.1);background:rgba(0,0,0,.2);box-shadow:inset 0 0 0 .7px rgba(255,255,255,.15)}
+#headS{left:496px;top:31px;width:219px;height:64px;border-radius:999px;background:rgba(0,0,0,.3);backdrop-filter:blur(5.2px);-webkit-backdrop-filter:blur(5.2px);box-shadow:0 4px 21px rgba(0,0,0,.1)}
+#head{left:496px;top:31px;width:219px;height:64px}
+
+/* scene A: themes */
+#sceneA{position:absolute;inset:0}
+#row{position:absolute;left:0;top:0}
+.theme{position:absolute;width:281px;height:281px;transform-origin:50% 50%}  /* image includes ~8% shadow margin */
+.theme img{position:absolute;inset:0;width:100%;height:100%;border-radius:inherit}
+#create{left:367px;top:650px;width:475px;height:53px;border-radius:32.6px;background:rgba(255,255,255,.8);
+  backdrop-filter:blur(5px);-webkit-backdrop-filter:blur(5px);box-shadow:0 0 20px rgba(0,0,0,.08)}
+#create img{width:475px;height:53px}
+
+/* scene B: generated route */
+#sceneB{position:absolute;inset:0}
+#left{left:137px;top:123px;width:332px;height:658px;border-radius:28.7px;overflow:hidden}
+#right{left:483px;top:123px;width:625px;height:658px;border-radius:24.2px;overflow:hidden}
+.pos{position:absolute}
+#map{left:0;top:65px;width:625px;height:286px}
+#routeSvg{position:absolute;left:0;top:65px;width:625px;height:286px;overflow:visible}
+#tl{position:absolute;left:19px;top:379px;width:26px;height:520px}
+#tl i{position:absolute;left:12px;top:15px;width:1.2px;height:500px;background:rgba(255,255,255,.35)}
+#tl b{position:absolute;left:0;width:26px;height:26px;border-radius:999px;background:#1c1c1c;color:#fff;font:800 12px/26px Montserrat,system-ui,sans-serif;text-align:center}
+#fly{width:318px}
+.touch{width:46px;height:46px;margin:-23px 0 0 -23px;border-radius:999px;background:rgba(255,255,255,.35);
+  border:2px solid rgba(255,255,255,.9);box-shadow:0 0 0 1px rgba(0,0,0,.12),0 2px 10px rgba(0,0,0,.2);opacity:0;pointer-events:none;z-index:50}
+
+@font-face{font-family:Manrope;font-weight:500;src:url(fonts/manrope-latin-500-normal.woff2) format("woff2")}
+@font-face{font-family:Manrope;font-weight:600;src:url(fonts/manrope-latin-600-normal.woff2) format("woff2")}
+@font-face{font-family:Montserrat;font-weight:700;src:url(fonts/montserrat-latin-700-normal.woff2) format("woff2")}
+/* scene L: route being built (between theme pick and the generated route) */
+#sceneL{position:absolute;inset:0;visibility:hidden}
+#lcard{left:375px;top:279px;width:460px;height:276px;border-radius:28.7px;overflow:hidden;transform-origin:50% 50%}
+#lcard .hd{position:absolute;left:116px;top:36px}
+#lcard .tag{display:inline-flex;align-items:center;gap:6px;height:24px;padding:0 10px;border-radius:999px;background:rgba(255,255,255,.14);
+  font:600 12px/1 Manrope,sans-serif;letter-spacing:.04em;text-transform:uppercase;color:rgba(255,255,255,.85)}
+#lcard .tag i{width:6px;height:6px;border-radius:999px;background:#fff}
+#lcard h2{margin-top:9px;font:700 23px/1.15 Montserrat,sans-serif;letter-spacing:-.3px;color:#fff;white-space:nowrap}
+#lcard h2 span{display:inline-block;width:24px;text-align:left}
+#steps{position:absolute;left:28px;top:128px;width:404px}
+.st{display:flex;align-items:center;gap:12px;height:30px;font:600 15px/1 Manrope,sans-serif;color:#fff}
+.st .ic{position:relative;width:20px;height:20px;flex:none}
+.st .ic .ring{position:absolute;inset:0;border-radius:999px;border:2px solid rgba(255,255,255,.25)}
+.st .ic .spin{position:absolute;inset:0;border-radius:999px;border:2px solid transparent;border-top-color:#fff;border-right-color:#fff}
+.st .ic .ok{position:absolute;inset:0;border-radius:999px;background:#fff;opacity:0}
+.st .ic .ok svg{position:absolute;inset:0}
+.st .tx{transition:none}
+#lbar{position:absolute;left:28px;right:28px;bottom:30px;height:5px;border-radius:999px;background:rgba(255,255,255,.14);overflow:hidden}
+#lbar i{display:block;height:100%;width:0;border-radius:999px;background:#fff;box-shadow:0 0 10px rgba(255,255,255,.45)}
+#pick{left:0;top:0;transform-origin:0 0;z-index:5}
+
+@font-face{font-family:Montserrat;font-weight:400;src:url(fonts/montserrat-latin-400-normal.woff2) format("woff2")}
+@font-face{font-family:Montserrat;font-weight:500;src:url(fonts/montserrat-latin-500-normal.woff2) format("woff2")}
+/* range wheel (Figma 2018:27360 → 2018:26937): 142×224 glass, 1.0km → 1.5km */
+#range{left:42px;top:305.2px;width:142px;height:223.9px;border-radius:23.9px;overflow:hidden;
+  background:rgba(0,0,0,.2);backdrop-filter:blur(23px);-webkit-backdrop-filter:blur(23px);box-shadow:inset 0 0 0 .6px rgba(255,255,255,.15)}
+#range .ttl{position:absolute;left:0;right:0;top:19.1px;text-align:center;font:400 17.94px/22px Montserrat,sans-serif;color:#fff}
+#range .chip{position:absolute;left:9.5px;top:109px;width:123px;height:47.8px;border-radius:11.9px;
+  background:radial-gradient(ellipse at center,rgba(26,112,255,0) 22%,rgba(26,112,255,.08) 100%),rgba(255,255,255,.3);
+  backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);box-shadow:0 3.2px 15.9px rgba(0,0,0,.1)}
+#range .chip i{position:absolute;left:17.5px;top:20.7px;width:6.3px;height:6.3px;border-radius:999px;background:#fff}
+#range .rv{position:absolute;left:0;right:0;top:0;text-align:center;font-family:Montserrat,sans-serif;white-space:nowrap;transform-origin:50% 50%}
+#range .rv.in{left:34.9px;right:auto;width:84px}
+
+@font-face{font-family:Manrope;font-weight:400;src:url(fonts/manrope-latin-400-normal.woff2) format("woff2")}
+/* ---------- arrival ---------- */
+@font-face{font-family:Manrope;font-weight:700;src:url(fonts/manrope-latin-700-normal.woff2) format("woff2")}
+/* floor guidance card: base art + live chip (so distance can count down and switch to Arrived) */
+#fChip{position:absolute;left:50%;top:23.2px;transform:translateX(-50%);height:46.9px;padding:0 16.5px;display:flex;align-items:center;gap:8.3px;
+  border-radius:999px;background:#1c1c1c;font:700 22px/1 Manrope,sans-serif;color:#fff;white-space:nowrap}
+#fChip svg{width:19.3px;height:22.1px;flex:none}
+#fChip .ic{position:relative;width:19.3px;height:22.1px;flex:none}
+#fChip .ic svg{position:absolute;inset:0}
+#arrWrap{position:absolute;left:0;top:0;width:1210px;height:834px;mix-blend-mode:screen;pointer-events:none;opacity:0;visibility:hidden}
+#arrChip{position:absolute;left:50%;top:741.1px;transform:translateX(-50%);height:46.9px;padding:0 16.5px;display:flex;align-items:center;gap:8.3px;
+  border-radius:999px;background:#1c1c1c;font:700 22px/1 Manrope,sans-serif;color:#fff;white-space:nowrap}
+#arrChip svg{width:19.3px;height:22.1px;flex:none}
+/* ---------- scene D: at the pin (Figma 새로 추가1 → 2) ---------- */
+#sceneD{position:absolute;inset:0;visibility:hidden}
+#wall{position:absolute;left:0;top:0;width:1210px;height:887px;transform-origin:50% 40%}
+.wpS{position:absolute;border-radius:999px;backdrop-filter:blur(11px);-webkit-backdrop-filter:blur(11px)}
+.wp{position:absolute;border-radius:999px}
+#wMetrics{left:1062px;top:310px;width:120px;padding-top:28px;display:flex;flex-direction:column;gap:24px;text-align:right;color:#fff}
+#wMetrics b{display:block;font:700 25.89px/30px Montserrat,sans-serif}
+#wMetrics small{display:block;margin-top:3px;font:400 7.97px/11px Manrope,sans-serif;letter-spacing:.06em;text-transform:uppercase;color:#d1d1d1}
+#wRailS{left:1203px;top:310px;width:53.8px;height:239px;border-radius:133px;backdrop-filter:blur(11px);-webkit-backdrop-filter:blur(11px)}
+#wRail{left:1203px;top:310px;width:53.8px;height:239px}
+#wCardS{width:337px;height:501px;border-radius:15.7px;backdrop-filter:blur(23px);-webkit-backdrop-filter:blur(23px);box-shadow:0 0 118px rgba(0,0,0,.25)}
+#wCard{width:337px;height:501px}
+</style>
+</head>
+<body>
+<div id="vp">
+  <img id="bg" class="abs" src="assets/bg.jpg" alt="" style="display:none">
+  <video id="navV" muted playsinline preload="auto" style="position:absolute;left:0;top:0;width:1210px;height:834px;object-fit:cover;transform-origin:50% 50%"><source src="assets/dogwalk_hevc.mp4" type='video/mp4; codecs="hvc1"'><source src="assets/dogwalk.mp4" type="video/mp4"></video>
+  <img id="navBlur" src="assets/dog_blur.jpg" class="abs" alt="" style="width:1210px;height:834px;transform-origin:50% 50%">
+  <div id="sceneD">
+    <img id="wall" src="assets/wall.jpg" alt="">
+    <video id="wallV" muted playsinline preload="auto" style="position:absolute;left:0;top:0;width:1664px;height:1248px;transform-origin:0 0"><source src="assets/wallv_hevc.mp4" type='video/mp4; codecs="hvc1"'><source src="assets/wallv.mp4" type="video/mp4"></video>
+    <div id="wPins"></div>
+    <div id="wRailS" class="abs" style="background:rgba(255,255,255,0)"></div><img id="wRail" class="abs" src="assets/w_rail.png" alt="">
+    <div id="wMetrics" class="abs"><div><b>2km</b><small>Total Range</small></div><div><b>32</b><small>Impact Pins</small></div><div><b>Cold</b><small>Total Range</small></div></div>
+    <div id="wCardS" class="abs"></div><img id="wCard" class="abs" src="assets/w_card.png" alt="">
+  </div>
+
+  <div id="sceneA">
+    <div id="row"></div>
+    <div id="range" class="abs"><div class="ttl">Range</div><div class="chip"><i></i></div><div id="rvals"></div></div>
+    <div id="create" class="abs"><img src="assets/btnLabel.png" alt=""></div>
+  </div>
+
+  <div id="sceneL">
+    <div id="lcard" class="abs glass">
+      <div class="hd"><div class="tag"><i></i>Culture &amp; Art · 1.5km</div><h2 id="lt">Building your route<span id="dots"></span></h2></div>
+      <div id="steps">
+        <div class="st"><div class="ic"><i class="ring"></i><i class="spin"></i><i class="ok"><svg viewBox="0 0 20 20"><path d="M6 10.3l2.6 2.6L14.2 7.4" stroke="#1c1c1c" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></i></div><span class="tx">Finding pins that match your theme</span></div>
+        <div class="st"><div class="ic"><i class="ring"></i><i class="spin"></i><i class="ok"><svg viewBox="0 0 20 20"><path d="M6 10.3l2.6 2.6L14.2 7.4" stroke="#1c1c1c" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></i></div><span class="tx">Checking opening hours</span></div>
+        <div class="st"><div class="ic"><i class="ring"></i><i class="spin"></i><i class="ok"><svg viewBox="0 0 20 20"><path d="M6 10.3l2.6 2.6L14.2 7.4" stroke="#1c1c1c" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></i></div><span class="tx">Connecting the best walking order</span></div>
+      </div>
+      <div id="lbar"><i id="lprog"></i></div>
+    </div>
+    <img id="pick" class="abs" src="assets/theme3.png" alt="">
+  </div>
+
+  <div id="sceneB">
+    <div id="left" class="abs glass">
+      <img id="leftHead" class="pos" src="assets/leftHead.png" style="left:-12px;top:-12px;width:352px" alt="">
+      <img id="c0" class="pos" src="assets/card0.png" style="width:318px" alt="">
+      <img id="c1" class="pos" src="assets/card1.png" style="width:318px" alt="">
+      <img id="c2" class="pos" src="assets/card2.png" style="width:318px" alt="">
+      <img id="c3" class="pos" src="assets/card3.png" style="width:318px" alt="">
+    </div>
+    <div id="right" class="abs glass">
+      <img id="t5" class="pos" src="assets/title5.png" style="left:7px;top:12px;width:291px" alt="">
+      <img id="t6" class="pos" src="assets/title6.png" style="left:7px;top:12px;width:292px;opacity:0" alt="">
+      <img id="nb" class="pos" src="assets/navBtn.png" style="left:481px;top:7px;width:137px;transform-origin:50% 50%" alt="">
+      <img id="map" class="pos" src="assets/map.png" alt="">
+      <svg id="routeSvg" viewBox="0 0 625 286">
+        <defs><mask id="pinHoles" maskUnits="userSpaceOnUse" x="-20" y="-20" width="665" height="326"><rect x="-20" y="-20" width="665" height="326" fill="#fff"/><circle cx="69" cy="85" r="15" fill="#000"/><circle cx="412.7" cy="25.3" r="12.5" fill="#000"/><circle cx="552.7" cy="75.7" r="12.5" fill="#000"/><circle cx="202.7" cy="128.7" r="12.5" fill="#000"/><circle cx="178.7" cy="204" r="12.5" fill="#000"/><circle cx="319.3" cy="260" r="12.5" fill="#000"/><circle cx="234" cy="25" r="15.5" fill="#000"/></mask><filter id="glow" x="-5%" y="-5%" width="110%" height="110%"><feGaussianBlur stdDeviation="2.4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>
+        <g mask="url(#pinHoles)"><g transform="translate(80.42 15.18)" filter="url(#glow)"><path id="r0" pathLength="1" d="M7.60852 71.5523L111.572 104.465C118.634 106.701 122.418 114.362 119.902 121.328L100.441 175.207C98.0589 181.8 101.316 189.097 107.816 191.726L227.153 239.999C233.96 242.752 241.698 239.345 244.262 232.465L324.92 16.0965C327.425 9.37846 334.883 5.9421 341.617 8.40347L467.337 54.3564" stroke="#fff" stroke-width="5.7" stroke-linecap="round" stroke-linejoin="round" fill="none"/></g>
+        <g transform="translate(60.86 4.24)" filter="url(#glow)"><path id="r1" pathLength="1" d="M7.60852 77.2068L52.012 90.1928C55.8041 91.3018 59.8946 90.6318 63.1348 88.3709L178.108 8.14727C180.387 6.55703 183.363 8.83216 182.426 11.4486L144.073 118.574L120 185.219C117.619 191.813 120.876 199.109 127.375 201.738L246.713 250.011C253.52 252.765 261.257 249.358 263.822 242.477L344.48 26.1088C346.985 19.3908 354.443 15.9544 361.177 18.4158L486.897 64.3688" stroke="#fff" stroke-width="5.7" stroke-linecap="round" stroke-linejoin="round" fill="none" stroke-dasharray="0 1"/></g></g>
+      </svg>
+      <img id="pinsImg" class="pos" src="assets/pins.png" style="left:0;top:65px;width:625px" alt="">
+      <img id="newPin" class="pos" src="assets/newPin.png" style="left:195.6px;top:51.6px;width:76.7px;opacity:0" alt="">
+      <div id="tl"><i></i><b style="top:0">1</b><b id="tl2" style="top:217px">2</b></div>
+      <img id="oldList" class="pos" src="assets/oldList.png" style="left:45px;top:369px;width:565px" alt="">
+      <img id="newCard" class="pos" src="assets/newCard.png" style="left:45px;top:367px;width:565px;opacity:0" alt="">
+    </div>
+    <img id="fly" class="abs" src="assets/card0.png" alt="" style="opacity:0">
+  </div>
+
+  <div id="sceneC" style="position:absolute;inset:0;opacity:0;visibility:hidden">
+    <img id="navBg" src="assets/navbg.jpg" class="abs" style="display:none;width:1210px;height:834px;transform-origin:50% 50%" alt="">
+    <div style="position:absolute;left:469px;top:31px;width:63px;height:63px;border-radius:999px;background:rgba(0,0,0,.3);backdrop-filter:blur(5px);-webkit-backdrop-filter:blur(5px)"></div>
+    <img src="assets/head3.png" class="abs" style="left:469px;top:31px;width:63px;height:63px" alt="">
+    <div id="pillC" style="position:absolute;left:542px;top:31px;height:63px;padding:0 24px 0 14px;display:flex;align-items:center;gap:8px;border-radius:999px;background:rgba(0,0,0,.3);
+      backdrop-filter:blur(25px);-webkit-backdrop-filter:blur(25px);box-shadow:inset 0 0 0 .7px rgba(255,255,255,.15);font:600 19px/1 Montserrat,system-ui,sans-serif;color:#fff;white-space:nowrap">
+      <img src="assets/pillIcon.png" style="width:28px;height:44px;object-fit:contain" alt="">Ceramic Face Wall<span id="pillT" style="font-weight:500;opacity:.7;margin-left:6px">2 min</span></div>
+  </div>
+  <div id="arrWrap"><div id="arrChip"><svg viewBox="0 0 20 23"><path d="M2.6 12.2L7.6 17.2L17 6.6" stroke="#fff" stroke-width="2.92053" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg><span>Arrived</span></div></div>
+  <!-- floor card lives beside the video (not inside sceneC) so its Figma screen blend has the footage to blend with -->
+  <div id="floorWrap" style="position:absolute;left:473px;top:543px;width:264px;height:245px;mix-blend-mode:screen;opacity:0;visibility:hidden">
+    <img src="assets/floor_plain.png" style="width:264px;height:245px;border-radius:25.45px;box-shadow:inset 0 0 0 2px rgba(255,255,255,.2)" alt="" id="floorImgR">
+    <img id="fArrow" src="assets/floor_base.png" alt="" style="position:absolute;left:0;top:0;width:264px;height:245px;border-radius:25.45px">
+    <div id="fChip"><span class="ic">
+      <svg id="icTurn" viewBox="0 0 20 23"><path d="M2.755 18.7435V6.08789H13.4636" stroke="#fff" stroke-width="2.92053" stroke-linecap="round" stroke-linejoin="round" fill="none"/><path d="M19.3047 6.08789L9.56958 0.467324V11.7085L19.3047 6.08789Z" fill="#fff"/></svg>
+      <svg id="icUp" viewBox="0 0 20 23" style="opacity:0;transform:scaleX(-1)"><path d="M2.755 18.7435V6.08789H13.4636" stroke="#fff" stroke-width="2.92053" stroke-linecap="round" stroke-linejoin="round" fill="none"/><path d="M19.3047 6.08789L9.56958 0.467324V11.7085L19.3047 6.08789Z" fill="#fff"/></svg></span>
+      <span id="fTxt">After 1.2km</span></div>
+  </div>
+  <div id="headS" class="abs"></div><img id="head" class="abs" src="assets/headRoute.png" alt="">
+  <div id="tap" class="abs touch"></div>
+  <div id="drag" class="abs touch"></div>
+</div>
+<script>
+const $=id=>document.getElementById(id);
+const clamp=(v,a=0,b=1)=>Math.min(b,Math.max(a,v));
+const lerp=(a,b,k)=>a+(b-a)*k;
+const prog=(t,a,b)=>clamp((t-a)/(b-a));
+const eio=k=>k<.5?4*k*k*k:1-Math.pow(-2*k+2,3)/2;
+const eout=k=>1-Math.pow(1-k,3);
+const back=k=>{const c=1.4;return 1+(c+1)*Math.pow(k-1,3)+c*Math.pow(k-1,2)};
+const CAPTURE=new URLSearchParams(location.search).has('capture');
+const tr=(el,x,y,extra='')=>{el.style.transform=`translate(${x}px,${y}px)${extra}`};
+
+/* ---- scene A: theme carousel (Figma motion: row -17 → -343 → -637 → -969, focus card scales up) ---- */
+const THEME_X=[0,371,686,1000,1315,1630], ROW=[-17,-343,-637,-969];
+const HOLD0=2.3;                       // rest, set the range (1.0 → 1.5 km), then the carousel moves
+const RANGE={spin:[1.0,1.75]}, RV=['0km','0.5km','1.0km','1.5km','2.0km','2.5km','3.0km'], RV0=2, RV1=3;
+const STEPS=[[0.9,1.65],[1.85,2.6],[2.8,3.55]].map(([a,b])=>[a+HOLD0,b+HOLD0]);
+const BOX=281, CARD=BOX, CAR_GAP=4;   // 281px images; each carries ~23px shadow margin, so visible card gaps ≈ 50px
+const rvEls=RV.map(v=>{const e=document.createElement('div');e.className='rv';e.textContent=v;$('rvals').appendChild(e);return e});
+const themes=THEME_X.map((x,i)=>{const d=document.createElement('div');d.className='theme';d.style.left='0px';d.style.top=(403.5-BOX/2)+'px';
+  const im=document.createElement('img');im.src=`assets/theme${i}.png`;d.appendChild(im);$('row').appendChild(d);return d});
+const A={in:[0,.5], tap:4.15+HOLD0, out:[4.45+HOLD0,4.85+HOLD0]};
+
+/* ---- scene B: drag a pin card into the route (Figma motion, 6s, offset by B0) ---- */
+/* ---- scene L: the chosen theme folds into a glass card while the route is built ---- */
+const L0=4.5+HOLD0;
+const L={fly:[0,.75], cardIn:[.25,.8], steps:[[.6,1.35],[1.35,2.0],[2.0,2.75]], draw:[.7,2.75], out:[3.0,3.45]};
+const PICK_FROM={x:605-BOX*1.18/2,y:403.5-BOX*1.18/2,w:BOX*1.18}, PICK_TO={x:375+26,y:279+26,w:76};
+const B0=L0+3.25;
+
+const BI=1.0;                          // build-in: panels and their contents appear one by one
+const B={in:[0,.12], hold:1.07+BI, fly:[1.39+BI,2.3+BI], land:2.3+BI, listUp:[1.35+BI,1.85+BI], shift:[1.75+BI,2.3+BI], expand:[2.3+BI,2.85+BI], oldOut:[2.57+BI,2.87+BI], title:[3.33+BI,3.62+BI], pin:[3.33+BI,3.73+BI], draw:[3.8+BI,4.65+BI], end:6.6+BI};
+const POP={left:0, right:.08, leftHead:.18, c0:.26, c1:.34, c2:.42, c3:.5, t5:.22, nb:.3, map:.34, pins:.5, r0:[.56,.95], tl:.62, oldList:.68};
+const pop=(tb,s)=>eout(prog(tb,s,s+.32));
+const C0=B0+B.end-1.4;                 // tap Navigate after the new route is drawn
+const C={tap:0, out:[.25,.7], in:[.4,.9], focus:[.4,1.6], ui:[1.3,1.8], end:16.8};
+/* scene D (same clock as C): arrive → navigation closes → the pin's place → open the Tip pin */
+/* walk the whole clip first (it ends at 6.3s), then the place takes over */
+const D={swap:[6.0,6.9], arrive:10.2, navOff:[11.0,11.5], head:[11.4,11.9], pins:11.6, tap:12.5, cardIn:[12.7,13.25], look:[12.84,14.04]};
+/* wall footage (walk up → stop → slight upward glance), tracked against Figma 새로 추가1 on every frame:
+   WT.A places the clip (similarity), WT.pt = per-frame [x,y,scale] of the 4 pins, WT.valid = tracking confidence */
+const WT={"A":[0.70867,-0.0003,6.0069,-6.79544],"pt":[[[574.59,-73.88,0.9],[224.86,-0.13,0.91],[541.32,351.91,0.91],[419.01,179.06,0.91]],[[574.59,-73.88,0.9],[224.86,-0.13,0.91],[541.32,351.91,0.91],[419.01,179.06,0.91]],[[574.59,-73.88,0.9],[224.86,-0.13,0.91],[541.32,351.91,0.91],[419.01,179.06,0.91]],[[574.59,-73.88,0.9],[224.86,-0.13,0.91],[541.32,351.91,0.91],[419.01,179.06,0.91]],[[574.59,-73.88,0.9],[224.86,-0.13,0.91],[541.32,351.91,0.91],[419.01,179.06,0.91]],[[574.59,-73.88,0.9],[224.86,-0.13,0.91],[541.32,351.91,0.91],[419.01,179.06,0.91]],[[574.59,-73.88,0.9],[224.86,-0.13,0.91],[541.32,351.91,0.91],[419.01,179.06,0.91]],[[574.59,-73.88,0.9],[224.86,-0.13,0.91],[541.32,351.91,0.91],[419.01,179.06,0.91]],[[574.59,-73.88,0.9],[224.86,-0.13,0.91],[541.32,351.91,0.91],[419.01,179.06,0.91]],[[574.59,-73.88,0.9],[224.86,-0.13,0.91],[541.32,351.91,0.91],[419.01,179.06,0.91]],[[574.59,-73.88,0.9],[224.86,-0.13,0.91],[541.32,351.91,0.91],[419.01,179.06,0.91]],[[574.59,-73.88,0.9],[224.86,-0.13,0.91],[541.32,351.91,0.91],[419.01,179.06,0.91]],[[574.59,-73.88,0.9],[224.86,-0.13,0.91],[541.32,351.91,0.91],[419.01,179.06,0.91]],[[574.59,-73.88,0.9],[224.86,-0.13,0.91],[541.32,351.91,0.91],[419.01,179.06,0.91]],[[574.59,-73.88,0.9],[224.86,-0.13,0.91],[541.32,351.91,0.91],[419.01,179.06,0.91]],[[574.59,-73.88,0.9],[224.86,-0.13,0.91],[541.32,351.91,0.91],[419.01,179.06,0.91]],[[574.59,-73.88,0.9],[224.86,-0.13,0.91],[541.32,351.91,0.91],[419.01,179.06,0.91]],[[574.59,-73.88,0.9],[224.86,-0.13,0.91],[541.32,351.91,0.91],[419.01,179.06,0.91]],[[574.59,-73.88,0.9],[224.86,-0.13,0.91],[541.32,351.91,0.91],[419.01,179.06,0.91]],[[574.59,-73.88,0.9],[224.86,-0.13,0.91],[541.32,351.91,0.91],[419.01,179.06,0.91]],[[574.59,-73.88,0.9],[224.86,-0.13,0.91],[541.32,351.91,0.91],[419.01,179.06,0.91]],[[574.59,-73.88,0.9],[224.86,-0.13,0.91],[541.32,351.91,0.91],[419.01,179.06,0.91]],[[574.59,-73.88,0.9],[224.86,-0.13,0.91],[541.32,351.91,0.91],[419.01,179.06,0.91]],[[574.59,-73.88,0.9],[224.86,-0.13,0.91],[541.32,351.91,0.91],[419.01,179.06,0.91]],[[574.59,-73.88,0.9],[224.86,-0.13,0.91],[541.32,351.91,0.91],[419.01,179.06,0.91]],[[574.59,-73.88,0.9],[224.86,-0.13,0.91],[541.32,351.91,0.91],[419.01,179.06,0.91]],[[574.59,-73.88,0.9],[224.86,-0.13,0.91],[541.32,351.91,0.91],[419.01,179.06,0.91]],[[574.59,-73.88,0.9],[224.86,-0.13,0.91],[541.32,351.91,0.91],[419.01,179.06,0.91]],[[574.59,-73.88,0.9],[224.86,-0.13,0.91],[541.32,351.91,0.91],[419.01,179.06,0.91]],[[574.59,-73.88,0.9],[224.86,-0.13,0.91],[541.32,351.91,0.91],[419.01,179.06,0.91]],[[574.59,-73.88,0.9],[224.86,-0.13,0.91],[541.32,351.91,0.91],[419.01,179.06,0.91]],[[574.59,-73.88,0.9],[224.86,-0.13,0.91],[541.32,351.91,0.91],[419.01,179.06,0.91]],[[574.59,-73.88,0.9],[224.86,-0.13,0.91],[541.32,351.91,0.91],[419.01,179.06,0.91]],[[574.59,-73.88,0.9],[224.86,-0.13,0.91],[541.32,351.91,0.91],[419.01,179.06,0.91]],[[574.59,-73.88,0.9],[224.86,-0.13,0.91],[541.32,351.91,0.91],[419.01,179.06,0.91]],[[574.59,-73.88,0.9],[224.86,-0.13,0.91],[541.32,351.91,0.91],[419.01,179.06,0.91]],[[574.59,-73.88,0.9],[224.86,-0.13,0.91],[541.32,351.91,0.91],[419.01,179.06,0.91]],[[574.59,-73.88,0.9],[224.86,-0.13,0.91],[541.32,351.91,0.91],[419.01,179.06,0.91]],[[574.59,-73.88,0.9],[224.86,-0.13,0.91],[541.32,351.91,0.91],[419.01,179.06,0.91]],[[574.59,-73.88,0.9],[224.86,-0.13,0.91],[541.32,351.91,0.91],[419.01,179.06,0.91]],[[574.59,-73.88,0.9],[224.86,-0.13,0.91],[541.32,351.91,0.91],[419.01,179.06,0.91]],[[574.59,-73.88,0.9],[224.86,-0.13,0.91],[541.32,351.91,0.91],[419.01,179.06,0.91]],[[574.59,-73.88,0.9],[224.86,-0.13,0.91],[541.32,351.91,0.91],[419.01,179.06,0.91]],[[574.59,-73.88,0.9],[224.86,-0.13,0.91],[541.32,351.91,0.91],[419.01,179.06,0.91]],[[574.32,-71.58,0.9],[224.12,2.29,0.91],[541.51,355.18,0.91],[418.83,181.95,0.91]],[[574.16,-66.67,0.9],[223.14,6.98,0.91],[541.47,360.14,0.91],[418.48,186.94,0.91]],[[574.03,-59.48,0.9],[222.3,13.58,0.92],[541.3,367.81,0.91],[418.03,194.18,0.91]],[[574.19,-49.57,0.9],[220.76,22.58,0.92],[541.03,379.22,0.92],[417.18,204.29,0.92]],[[574.49,-37.02,0.91],[219.14,34.06,0.92],[540.9,392.33,0.92],[416.51,216.75,0.92]],[[575.09,-24.71,0.91],[217.93,45.26,0.92],[540.68,404.88,0.92],[415.94,228.79,0.92]],[[575.91,-12.21,0.92],[216.17,56.15,0.93],[540.64,418.18,0.93],[415.26,241.0,0.93]],[[577.29,0.25,0.92],[212.53,66.82,0.94],[541.01,431.89,0.94],[414.48,253.63,0.94]],[[578.7,12.28,0.93],[211.49,77.72,0.94],[541.76,443.67,0.94],[414.71,265.41,0.94]],[[580.61,23.76,0.93],[210.38,87.72,0.95],[542.63,456.2,0.94],[414.89,276.84,0.94]],[[582.99,35.36,0.93],[209.6,97.07,0.95],[543.74,468.23,0.95],[415.32,287.65,0.95]],[[585.89,46.2,0.94],[209.94,106.76,0.96],[545.57,480.34,0.95],[416.61,298.67,0.95]],[[588.87,57.12,0.94],[211.59,116.42,0.96],[547.55,492.03,0.96],[418.24,309.25,0.96]],[[592.21,67.94,0.95],[212.08,125.69,0.96],[549.86,504.19,0.96],[419.87,320.07,0.96]],[[595.55,78.91,0.95],[212.96,135.61,0.97],[552.36,516.13,0.97],[421.76,331.13,0.96]],[[599.41,89.99,0.96],[214.1,145.68,0.97],[555.33,528.27,0.97],[424.11,342.46,0.97]],[[603.38,101.45,0.96],[215.55,155.83,0.97],[558.39,540.5,0.97],[426.58,353.77,0.97]],[[607.43,112.66,0.97],[217.63,165.89,0.98],[561.54,551.68,0.98],[429.37,364.56,0.97]],[[611.54,123.93,0.97],[219.04,175.59,0.98],[564.48,562.85,0.98],[431.84,375.24,0.98]],[[615.73,135.02,0.97],[220.63,185.13,0.98],[567.57,573.86,0.98],[434.43,385.67,0.98]],[[619.56,146.06,0.98],[222.27,194.77,0.98],[570.3,584.63,0.98],[436.78,395.97,0.98]],[[622.77,156.24,0.98],[222.65,203.2,0.99],[572.45,594.14,0.99],[438.42,405.28,0.99]],[[625.45,165.99,0.98],[223.43,211.41,0.99],[574.19,603.66,0.99],[439.83,414.27,0.99]],[[627.62,175.18,0.98],[224.1,219.4,0.99],[575.65,612.68,0.99],[440.96,422.82,0.99]],[[629.11,184.1,0.99],[224.08,226.92,0.99],[576.62,621.12,0.99],[441.65,431.1,0.99]],[[629.86,191.91,0.99],[223.31,233.6,0.99],[576.92,628.89,0.99],[441.59,438.54,0.99]],[[630.09,199.57,0.99],[222.44,240.33,1.0],[576.94,636.61,0.99],[441.27,445.89,0.99]],[[629.85,207.14,1.0],[220.86,247.16,1.0],[576.47,644.34,0.99],[440.41,453.31,0.99]],[[628.92,214.85,1.0],[218.71,254.12,1.0],[575.5,652.06,0.99],[439.03,460.84,1.0]],[[627.65,221.71,1.0],[216.0,260.22,1.0],[574.05,659.26,0.99],[437.14,467.62,1.0]],[[626.15,228.29,1.0],[213.41,266.21,1.0],[572.63,665.92,1.0],[435.29,474.08,1.0]],[[624.49,234.27,1.0],[211.09,271.73,1.0],[571.0,672.02,1.0],[433.38,479.95,1.0]],[[622.74,239.44,1.01],[208.84,276.13,1.0],[569.43,677.12,1.0],[431.52,484.78,1.0]],[[621.18,243.28,1.01],[206.92,279.21,1.01],[568.0,680.99,1.0],[429.87,488.29,1.0]],[[619.7,246.73,1.0],[205.54,281.98,1.0],[566.73,684.42,1.0],[428.46,491.33,1.0]],[[618.08,249.73,1.0],[204.14,284.4,1.0],[565.4,687.33,1.0],[426.99,493.93,1.0]],[[616.75,252.24,1.0],[203.01,286.27,1.0],[564.21,689.86,1.0],[425.73,496.06,1.0]],[[615.52,254.31,1.0],[201.74,288.02,1.0],[563.13,692.03,1.0],[424.53,498.02,1.0]],[[614.34,256.13,1.0],[200.53,289.54,1.0],[562.07,693.94,1.0],[423.39,499.74,1.0]],[[613.16,257.65,1.0],[199.37,290.76,1.0],[560.98,695.51,1.0],[422.24,501.15,1.0]],[[612.19,258.92,1.0],[198.32,291.74,1.0],[559.92,696.86,1.0],[421.19,502.34,1.0]],[[611.05,260.12,1.0],[197.23,292.7,1.0],[558.83,698.02,1.0],[420.09,503.41,1.0]],[[609.95,261.24,1.0],[196.21,293.66,1.0],[557.76,699.07,1.0],[419.03,504.42,1.0]],[[608.83,262.32,1.0],[195.33,294.57,1.0],[556.74,700.04,1.0],[418.02,505.32,1.0]],[[607.81,263.2,1.0],[194.44,295.33,1.0],[555.78,700.91,1.0],[417.07,506.14,1.0]],[[606.86,264.0,1.0],[193.61,296.05,1.0],[554.89,701.68,1.0],[416.19,506.87,1.0]],[[606.06,264.63,1.0],[192.98,296.61,1.0],[554.14,702.3,1.0],[415.47,507.46,1.0]],[[605.37,265.08,1.0],[192.41,297.0,1.0],[553.51,702.76,1.0],[414.85,507.87,1.0]],[[604.89,265.35,1.0],[191.89,297.31,1.0],[553.02,703.04,1.0],[414.36,508.19,1.0]],[[604.56,265.5,1.0],[191.67,297.44,1.0],[552.7,703.18,1.0],[414.07,508.32,1.0]],[[604.35,265.64,1.0],[191.51,297.65,1.0],[552.55,703.28,1.0],[413.91,508.46,1.0]],[[604.32,265.66,1.0],[191.56,297.7,1.0],[552.56,703.28,1.0],[413.92,508.48,1.0]],[[604.46,265.52,1.0],[191.72,297.58,1.0],[552.71,703.17,1.0],[414.08,508.36,1.0]],[[604.73,265.36,1.0],[192.01,297.38,1.0],[552.97,703.06,1.0],[414.35,508.21,1.0]],[[604.99,265.3,1.0],[192.34,297.33,1.0],[553.3,702.93,1.0],[414.66,508.09,1.0]],[[605.34,265.18,1.0],[192.75,297.21,1.0],[553.65,702.77,1.0],[415.03,507.95,1.0]],[[605.7,264.93,1.0],[193.1,296.98,1.0],[553.99,702.56,1.0],[415.37,507.72,1.0]],[[606.04,264.82,1.0],[193.43,296.87,1.0],[554.28,702.41,1.0],[415.68,507.59,1.0]],[[606.36,264.6,1.0],[193.73,296.66,1.0],[554.57,702.17,1.0],[415.98,507.37,1.0]],[[606.69,264.32,1.0],[193.91,296.43,1.0],[554.82,701.92,1.0],[416.23,507.16,1.0]],[[607.04,263.91,1.0],[194.21,295.96,1.0],[555.09,701.56,1.0],[416.52,506.75,1.0]],[[607.29,263.65,1.0],[194.4,295.73,1.0],[555.31,701.26,1.0],[416.74,506.49,1.0]],[[607.52,263.35,1.0],[194.63,295.44,1.0],[555.53,700.93,1.0],[416.96,506.18,1.0]],[[607.7,263.07,1.0],[194.82,295.18,1.0],[555.71,700.62,1.0],[417.14,505.89,1.0]],[[607.83,262.77,1.0],[195.03,294.84,1.0],[555.85,700.29,1.0],[417.31,505.54,1.0]],[[607.9,262.5,1.0],[195.13,294.58,1.0],[555.95,699.97,1.0],[417.4,505.25,1.0]],[[607.91,262.19,1.0],[195.22,294.27,1.0],[555.99,699.63,1.0],[417.46,504.93,1.0]],[[607.88,261.8,1.0],[195.25,293.89,1.0],[556.02,699.26,1.0],[417.48,504.54,1.0]],[[607.83,261.32,1.0],[195.27,293.47,1.0],[556.03,698.79,1.0],[417.48,504.09,1.0]],[[607.78,260.78,1.0],[195.28,293.03,1.0],[556.02,698.28,1.0],[417.48,503.6,1.0]],[[607.79,260.17,1.0],[195.29,292.49,1.0],[556.1,697.73,1.0],[417.52,503.04,1.0]],[[607.95,259.47,1.0],[195.42,291.88,1.0],[556.27,697.13,1.0],[417.68,502.43,1.0]],[[608.21,258.75,1.0],[195.58,291.28,1.0],[556.5,696.49,1.0],[417.89,501.83,1.0]],[[608.59,258.05,1.0],[195.85,290.66,1.0],[556.84,695.88,1.0],[418.22,501.23,1.0]],[[609.07,257.38,1.0],[196.15,290.08,1.0],[557.24,695.31,1.0],[418.61,500.68,1.0]],[[610.43,256.81,1.0],[197.05,289.49,1.0],[558.43,695.03,1.0],[419.73,500.29,1.0]],[[611.66,256.41,1.0],[197.86,289.02,1.0],[559.56,694.89,1.0],[420.75,500.01,1.0]],[[612.81,256.14,1.0],[198.59,288.68,1.0],[560.59,694.86,1.0],[421.7,499.87,1.0]],[[613.82,256.01,1.01],[199.21,288.48,1.01],[561.51,694.95,1.01],[422.52,499.85,1.01]],[[614.71,256.0,1.01],[199.8,288.4,1.01],[562.32,695.13,1.01],[423.26,499.92,1.01]],[[614.63,256.02,1.01],[199.78,288.44,1.01],[562.26,695.14,1.01],[423.22,499.94,1.01]],[[614.53,256.04,1.01],[199.73,288.5,1.01],[562.16,695.14,1.01],[423.13,499.98,1.01]],[[614.4,256.09,1.01],[199.67,288.56,1.01],[562.04,695.16,1.01],[423.03,500.01,1.01]],[[614.22,256.15,1.01],[199.59,288.63,1.01],[561.88,695.18,1.01],[422.9,500.05,1.01]],[[614.02,256.21,1.01],[199.47,288.67,1.01],[561.7,695.22,1.01],[422.73,500.08,1.01]],[[613.77,256.3,1.01],[199.33,288.72,1.01],[561.5,695.25,1.01],[422.55,500.1,1.01]],[[613.52,256.39,1.0],[199.19,288.79,1.01],[561.28,695.28,1.0],[422.35,500.15,1.01]],[[613.26,256.48,1.0],[199.02,288.85,1.01],[561.03,695.32,1.0],[422.12,500.19,1.0]],[[613.0,256.58,1.0],[198.85,288.93,1.0],[560.79,695.35,1.0],[421.9,500.25,1.0]],[[612.74,256.69,1.0],[198.67,289.02,1.0],[560.53,695.39,1.0],[421.67,500.31,1.0]],[[612.49,256.81,1.0],[198.42,289.07,1.0],[560.26,695.42,1.0],[421.42,500.36,1.0]],[[612.2,256.92,1.0],[198.28,289.14,1.0],[560.02,695.47,1.0],[421.2,500.4,1.0]],[[611.95,257.04,1.0],[198.14,289.24,1.0],[559.78,695.52,1.0],[420.99,500.47,1.0]],[[611.62,257.22,1.0],[197.87,289.4,1.0],[559.49,695.61,1.0],[420.71,500.59,1.0]],[[611.31,257.37,1.0],[197.72,289.51,1.0],[559.24,695.7,1.0],[420.48,500.67,1.0]],[[611.02,257.58,1.0],[197.66,289.77,1.0],[559.01,695.81,1.0],[420.29,500.83,1.0]],[[610.76,257.79,1.0],[197.52,289.92,1.0],[558.79,695.94,1.0],[420.09,500.95,1.0]],[[610.51,258.0,1.0],[197.36,290.09,1.0],[558.58,696.1,1.0],[419.89,501.1,1.0]],[[610.34,258.21,1.0],[197.37,290.23,1.0],[558.44,696.26,1.0],[419.78,501.22,1.0]],[[610.17,258.45,1.0],[197.25,290.44,1.0],[558.27,696.47,1.0],[419.62,501.42,1.0]],[[610.05,258.66,1.0],[197.08,290.61,1.0],[558.1,696.69,1.0],[419.47,501.64,1.0]],[[609.91,258.99,1.0],[196.93,290.96,1.0],[557.92,696.97,1.0],[419.31,501.97,1.0]],[[609.72,259.47,1.0],[196.86,291.4,1.0],[557.76,697.32,1.0],[419.17,502.34,1.0]],[[609.6,259.87,1.0],[196.69,291.8,1.0],[557.6,697.68,1.0],[419.02,502.74,1.0]],[[609.46,260.33,1.0],[196.56,292.2,1.0],[557.45,698.08,1.0],[418.88,503.14,1.0]],[[609.22,260.9,1.0],[196.5,292.68,1.0],[557.31,698.55,1.0],[418.73,503.56,1.0]],[[609.06,261.4,1.0],[196.41,293.07,1.0],[557.21,699.0,1.0],[418.61,503.97,1.0]],[[608.94,261.89,1.0],[196.33,293.42,1.0],[557.11,699.44,1.0],[418.51,504.36,1.0]],[[608.79,262.5,1.0],[196.09,294.05,1.0],[556.99,700.02,1.0],[418.35,504.97,1.0]],[[608.64,263.17,1.0],[196.02,294.62,1.0],[556.91,700.56,1.0],[418.25,505.51,1.0]],[[608.65,263.73,1.0],[195.84,295.14,1.0],[556.85,701.15,1.0],[418.17,506.11,1.0]],[[608.63,264.36,1.0],[195.69,295.71,1.0],[556.79,701.79,1.0],[418.09,506.75,1.0]],[[608.63,265.04,1.0],[195.49,296.41,1.0],[556.74,702.51,1.0],[418.02,507.5,1.0]],[[608.68,265.12,1.0],[195.52,296.42,1.0],[556.77,703.18,1.0],[418.06,507.88,1.0]],[[608.7,265.83,1.0],[195.39,297.01,1.0],[556.76,703.85,1.0],[418.03,508.56,1.0]],[[608.68,266.7,1.0],[195.31,297.85,1.0],[556.75,704.64,1.0],[417.99,509.39,1.0]],[[608.63,267.58,1.0],[195.26,298.38,1.0],[556.8,705.42,1.0],[417.98,510.03,1.0]],[[608.57,268.81,1.0],[195.47,299.52,1.0],[556.83,706.5,1.0],[418.03,511.07,1.0]],[[608.47,270.7,1.0],[195.51,300.71,1.0],[556.9,707.53,1.0],[418.03,512.14,1.0]],[[608.6,271.82,1.0],[195.6,301.76,1.0],[556.93,708.77,1.01],[418.09,513.28,1.0]],[[608.58,273.19,1.0],[195.65,302.51,1.0],[557.05,709.93,1.01],[418.14,514.19,1.0]],[[608.62,274.65,1.0],[195.64,304.21,1.0],[557.04,711.32,1.01],[418.14,515.75,1.0]],[[608.63,275.95,1.0],[195.63,305.01,1.0],[557.11,712.43,1.01],[418.16,516.71,1.0]],[[608.72,277.27,1.0],[195.66,306.75,1.0],[557.08,713.78,1.01],[418.18,518.27,1.0]],[[608.62,279.02,1.0],[195.94,308.42,1.0],[557.14,715.17,1.01],[418.26,519.72,1.0]],[[608.66,280.63,1.0],[196.18,310.21,1.0],[557.1,716.68,1.0],[418.31,521.32,1.0]],[[608.67,282.34,0.99],[196.41,311.63,1.0],[557.17,718.14,1.01],[418.39,522.72,1.0]],[[608.77,283.87,0.99],[196.46,312.9,1.0],[557.23,719.53,1.01],[418.45,524.07,1.0]],[[608.8,285.72,0.99],[196.81,314.1,1.0],[557.35,721.02,1.01],[418.58,525.31,1.0]],[[608.88,287.45,0.99],[196.48,315.65,1.0],[557.43,722.51,1.01],[418.56,526.95,1.0]],[[608.98,289.24,0.99],[196.34,317.48,1.0],[557.55,724.13,1.0],[418.64,528.79,1.0]],[[609.12,291.04,0.99],[196.43,319.25,1.0],[557.64,725.8,1.0],[418.74,530.53,1.0]],[[609.23,293.05,1.0],[196.29,321.64,1.0],[557.72,727.74,1.0],[418.8,532.77,1.0]],[[609.36,294.89,1.0],[196.02,323.83,1.0],[557.78,729.58,1.0],[418.82,534.9,1.0]],[[609.48,297.0,1.0],[196.8,325.74,1.0],[557.87,731.45,1.0],[419.07,536.62,1.0]],[[609.55,298.92,1.0],[196.78,327.38,1.0],[557.93,733.03,1.0],[419.1,538.25,1.0]],[[609.86,300.77,1.0],[197.02,329.14,1.0],[558.02,734.76,1.0],[419.27,540.01,1.0]],[[609.92,302.65,0.99],[197.09,330.81,1.0],[558.06,736.29,1.0],[419.33,541.62,1.0]],[[609.93,304.69,0.99],[197.5,332.28,1.0],[558.14,737.74,1.0],[419.45,542.98,1.0]],[[609.98,306.23,0.99],[196.95,333.65,1.0],[558.17,739.15,1.0],[419.34,544.51,1.0]],[[610.06,307.83,0.99],[197.03,335.13,1.0],[558.22,740.59,1.0],[419.4,545.98,1.0]],[[609.9,309.67,0.99],[197.02,336.51,1.0],[558.23,741.94,1.0],[419.35,547.31,1.0]],[[609.96,311.24,0.99],[197.01,337.95,1.0],[558.28,743.28,1.0],[419.39,548.73,1.0]],[[610.15,312.69,0.99],[197.14,339.39,1.0],[558.32,744.6,1.0],[419.48,550.11,1.0]],[[610.23,314.06,0.99],[196.96,340.64,1.0],[558.35,745.87,1.0],[419.45,551.41,1.0]],[[610.3,315.31,0.99],[197.03,341.73,1.0],[558.43,747.14,1.0],[419.5,552.57,1.0]],[[610.37,316.08,0.99],[196.78,342.65,1.0],[558.47,747.94,1.0],[419.49,553.51,1.0]],[[610.43,316.69,0.99],[196.77,342.94,1.0],[558.5,748.46,1.0],[419.49,553.91,1.0]],[[610.41,316.87,1.0],[196.28,343.33,1.0],[558.5,748.87,1.0],[419.39,554.45,1.0]],[[610.43,317.08,1.0],[196.4,343.56,1.0],[558.53,748.98,1.0],[419.45,554.63,1.0]],[[610.44,317.12,1.0],[196.35,343.68,1.0],[558.53,748.99,1.0],[419.44,554.71,1.0]],[[610.47,317.15,1.0],[196.06,343.86,1.0],[558.57,749.32,1.0],[419.39,554.99,1.0]],[[610.45,317.2,1.0],[196.3,344.09,1.0],[558.61,749.48,1.0],[419.47,555.12,1.0]],[[610.45,317.22,1.0],[196.34,344.13,1.0],[558.62,749.47,1.0],[419.49,555.13,1.0]],[[610.46,317.08,1.0],[196.13,344.01,1.0],[558.61,749.53,1.0],[419.43,555.14,1.0]],[[610.47,317.05,1.0],[196.24,344.09,1.0],[558.63,749.67,1.0],[419.47,555.22,1.0]],[[610.45,317.02,1.0],[196.48,343.91,1.0],[558.59,749.39,1.0],[419.51,554.97,1.0]],[[610.49,316.94,1.0],[196.27,344.03,1.0],[558.56,749.59,1.0],[419.45,555.17,1.0]],[[610.48,316.84,1.0],[196.03,343.84,1.0],[558.58,749.6,1.0],[419.39,555.12,1.0]],[[610.48,316.96,1.0],[196.21,344.04,1.0],[558.57,749.59,1.0],[419.44,555.18,1.0]],[[610.46,317.0,1.0],[196.23,343.89,1.0],[558.57,749.45,1.0],[419.43,555.03,1.0]],[[610.45,317.0,1.0],[196.3,343.85,1.0],[558.58,749.47,1.0],[419.45,555.0,1.0]],[[610.45,316.96,1.0],[196.17,343.67,1.0],[558.58,749.25,1.0],[419.43,554.87,1.0]],[[610.45,317.06,1.0],[196.36,343.8,1.0],[558.57,749.2,1.0],[419.47,554.87,1.0]],[[610.44,317.07,1.0],[196.4,343.78,1.0],[558.58,749.15,1.0],[419.49,554.83,1.0]],[[610.44,317.07,1.0],[196.27,343.83,1.0],[558.56,749.06,1.0],[419.46,554.85,1.0]],[[610.42,317.1,1.0],[196.18,343.85,1.0],[558.55,748.96,1.0],[419.43,554.84,1.0]],[[610.41,317.17,1.0],[196.3,343.9,1.0],[558.54,748.87,1.0],[419.46,554.8,1.0]]],"valid":[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.14,0.29,0.43,0.57,0.71,0.86,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0]}, WZ=1.045;   // slight zoom so the clip covers the frame
+function wpAt(vt,i){const f=Math.max(0,Math.min(WT.pt.length-1.001,vt*24)),fi=Math.floor(f),u=f-fi,a=WT.pt[fi][i],b=WT.pt[fi+1][i];
+  const x=a[0]+(b[0]-a[0])*u,y=a[1]+(b[1]-a[1])*u,sc=a[2]+(b[2]-a[2])*u; return [605+WZ*(x-605),417+WZ*(y-417),sc*WZ]}
+const wValid=vt=>{const f=Math.max(0,Math.min(WT.valid.length-1,Math.round(vt*24)));return WT.valid[f]};
+const WP=[{x:569,y:224,w:78,s:'tip',op:1},{x:177,y:278,w:35,s:'scn',op:.7},{x:529,y:672,w:53,s:'per',op:.7},{x:390,y:478,w:54,s:'inf',op:.7}];
+const WCARD={dx:106,dy:-78};   // Figma 새로 추가2: card at pin + (106,-78)
+const wpEls=WP.map(p=>{const sh=document.createElement('div');sh.className='wpS';sh.style.width=sh.style.height=p.w+'px';
+  const im=document.createElement('img');im.className='wp';im.src=`assets/w_pin_${p.s}.png`;im.style.width=im.style.height=p.w+'px';
+  if(p.s==='tip')im.style.boxShadow='0 6px 16px rgba(0,0,0,.18)'; $('wPins').append(sh,im);return [sh,im]});
+const DUR=C0+C.end;
+const LIST=[0,266,393,613], CARD_FROM={x:158,y:196}, CARD_TO={x:537,y:502};
+
+function apply(t){
+  /* scene A */
+  const aIn=eout(prog(t,...A.in)), aOut=prog(t,...A.out);
+  $('sceneA').style.opacity=aIn*(1-aOut); $('sceneA').style.visibility=aOut<1?'visible':'hidden';
+  let f=0; STEPS.forEach(([a,b])=>{f+=eio(prog(t,a,b))});
+
+  /* range wheel: rows above/below shrink and fade (Figma: ±1 → 15.9px 50%, ±2 → 11.1px 20%) */
+  const rv=lerp(RV0,RV1,eio(prog(t,...RANGE.spin))), CY=133;     // chip centre in the card
+  rvEls.forEach((e,i)=>{const d=i-rv,a=Math.abs(d);
+    const y=Math.sign(d)*(a<=1?35.9*a:35.9+24*(a-1));
+    const fs=a<=1?lerp(19.83,15.87,a):lerp(15.87,11.11,Math.min(1,a-1));
+    const op=a<=1?lerp(1,.5,a):a<=2?lerp(.5,.2,a-1):Math.max(0,lerp(.2,0,(a-2)/.6));
+    const dark=a<.5; e.style.fontSize=fs+'px'; e.style.lineHeight='24px'; e.style.fontWeight=a<.5?700:500;
+    e.style.color='#fff'; e.style.opacity=op; e.className='rv'+(a<.5?' in':'');
+    e.style.transform=`translateY(${CY+y-12}px)`; e.style.visibility=a>2.6?'hidden':'visible';});
+  /* focused card always sits at the screen centre; every gap between visible card edges stays CAR_GAP */
+  const sc=themes.map((d,i)=>1+.18*clamp(1-Math.abs(i-f)));
+  const cx=[0]; for(let i=1;i<themes.length;i++) cx.push(cx[i-1]+CARD*sc[i-1]/2+CAR_GAP+CARD*sc[i]/2);
+  const fi=Math.min(Math.floor(f),themes.length-2), fk=f-fi, off=605-lerp(cx[fi],cx[fi+1],fk);
+  themes.forEach((d,i)=>{const near=clamp(1-Math.abs(i-f));
+    d.style.transform=`translate(${off+cx[i]-BOX/2}px,0) scale(${sc[i]})`;d.style.opacity=.5+.5*near;d.style.zIndex=Math.round(near*10)});
+  $('create').style.transform=`scale(${1-.03*Math.sin(Math.PI*prog(t,A.tap,A.tap+.3))})`;
+
+  /* scene L */
+  const tl=t-L0, lIn=eout(prog(tl,...L.cardIn)), lOut=eio(prog(tl,...L.out));
+  $('sceneL').style.visibility=(tl>=0&&lOut<1)?'visible':'hidden';
+  const lc=$('lcard'); lc.style.opacity=lIn*(1-lOut);
+  lc.style.transform=`scale(${lerp(.94,1,lIn)*lerp(1,1.04,lOut)})`; lc.style.filter=lOut>0?`blur(${12*lOut}px)`:'none';
+  const pf=eio(prog(tl,...L.fly)), pw=lerp(PICK_FROM.w,PICK_TO.w,pf);
+  const pk2=$('pick'); pk2.style.width=pk2.style.height=pw+'px';
+  pk2.style.transform=`translate(${lerp(PICK_FROM.x,PICK_TO.x,pf)}px,${lerp(PICK_FROM.y,PICK_TO.y,pf)}px)`;
+  pk2.style.opacity=(tl>=0?1:0)*(1-lOut); pk2.style.filter=lOut>0?`blur(${12*lOut}px)`:'none';
+  document.querySelectorAll('#steps .st').forEach((el,i)=>{const [a,b]=L.steps[i];
+    const act=tl>=a, done=tl>=b;
+    el.querySelector('.tx').style.opacity=act?1:.45;
+    el.querySelector('.spin').style.opacity=act&&!done?1:0; el.querySelector('.spin').style.transform=`rotate(${tl*400}deg)`;
+    const ok=el.querySelector('.ok'); const ok2=prog(tl,b,b+.2); ok.style.opacity=ok2; ok.style.transform=`scale(${done?lerp(.6,1,ok2):.6})`;});
+  $('lprog').style.width=(eio(prog(tl,.4,2.85))*100)+'%';
+  $('dots').textContent=tl>=L.steps[2][1]?'':'.'.repeat(1+Math.floor((Math.max(0,tl)*3)%3));
+  if(tl>=L.steps[2][1]) $('lt').firstChild.textContent='Your route is ready';
+  else $('lt').firstChild.textContent='Building your route';
+
+  /* scene B */
+  const tb=t-B0;
+  const bIn=eout(prog(tb,...B.in));
+  $('sceneB').style.opacity=bIn; $('sceneB').style.visibility=bIn>0?'visible':'hidden';
+  /* build-in */
+  for(const id of ['left','right']){const k=pop(tb,POP[id]); $(id).style.opacity=k; $(id).style.transform=`translateY(${(1-k)*22}px) scale(${lerp(.96,1,k)})`}
+  const pkI={}; for(const id of ['leftHead','c0','c1','c2','c3','t5','nb','map','pinsImg','tl','oldList']) pkI[id]=pop(tb,POP[id==='pinsImg'?'pins':id]);
+  $('leftHead').style.opacity=pkI.leftHead; $('map').style.opacity=pkI.map; $('tl').style.opacity=pkI.tl; $('nb').style.opacity=pkI.nb;
+  $('pinsImg').style.opacity=pkI.pinsImg; $('pinsImg').style.transform=`scale(${lerp(.9,1,pkI.pinsImg)})`; $('pinsImg').style.transformOrigin='50% 50%';
+  const rIn=eio(prog(tb,...POP.r0));
+  const up=-266*eio(prog(tb,...B.listUp));
+  const col=eio(prog(tb,...B.listUp));
+  LIST.forEach((y,i)=>{const el=$('c'+i),k=pkI['c'+i],dy=(1-k)*18; if(!i){tr(el,9,61+y+dy);el.style.clipPath=`inset(0 0 ${col*100}% 0 round 22px)`;el.style.opacity=k*(1-prog(tb,B.hold,B.hold+.22));} else {tr(el,9,61+y+up+dy);el.style.opacity=k}});
+  // floating copy: lifted on pinch, carried to the itinerary
+  const fk2=eio(prog(tb,...B.fly)), lift=prog(tb,B.hold,B.hold+.22);
+  const fx=lerp(CARD_FROM.x,CARD_TO.x,fk2), fy=lerp(CARD_FROM.y,CARD_TO.y,fk2)-Math.sin(fk2*Math.PI)*40;
+  $('fly').style.opacity=lift*(1-prog(tb,B.land-.1,B.land)); tr($('fly'),fx-9,fy-12,` scale(${1+.04*lift})`);
+  // itinerary makes room, new card lands at the top
+  const sh=eio(prog(tb,...B.shift));
+  tr($('oldList'),0,-6.7+260*sh+(1-pkI.oldList)*18); $('oldList').style.opacity=pkI.oldList; tr($('tl2'),0,260*sh);
+  const ex=eio(prog(tb,...B.expand)), nc=$('newCard');
+  nc.style.opacity=prog(tb,B.land-.06,B.land+.02);
+  nc.style.transform='none'; nc.style.clipPath=`inset(0 0 ${lerp(85,0,ex)}% 0 round 22px)`;
+  // route regenerates
+  $('r0').style.opacity=1-eio(prog(tb,...B.oldOut)); $('r0').setAttribute('stroke-dasharray',`${rIn} 1`); if(rIn<.002) $('r0').style.opacity=0;
+  {const d1=eio(prog(tb,...B.draw)); $('r1').setAttribute('stroke-dasharray',`${d1} 1`); $('r1').style.opacity=d1<.002?0:1;}
+  const ti=eio(prog(tb,...B.title)); $('t5').style.opacity=(1-ti)*pkI.t5; $('t6').style.opacity=ti;
+  const pk=prog(tb,...B.pin); $('newPin').style.opacity=clamp(pk*1.6); $('newPin').style.transform=`scale(${pk<=0?0.6:pk<.6?lerp(.6,1.12,pk/.6):lerp(1.12,1,(pk-.6)/.4)})`;
+
+  /* scene C: navigation to the first pin on the route */
+  const tc=t-C0, cOut=eio(prog(tc,...C.out)), cIn=eout(prog(tc,...C.in));
+  if(tc>0){ $('sceneB').style.opacity=bIn*(1-cOut); }
+  const hd=eout(prog(tc,...D.head)); const head=Math.max(1-cOut,hd); $('headS').style.opacity=head; $('head').style.opacity=head; 
+  $('sceneC').style.opacity=cIn; $('sceneC').style.visibility=cIn>0?'visible':'hidden';
+  /* background pulls into focus: blur clears while the view zooms out to rest */
+  const fz=eout(prog(tc,...C.focus)), ui=eout(prog(tc,...C.ui));
+  $('navBg').style.filter=`blur(${lerp(22,0,fz)}px)`; $('navBg').style.transform=`scale(${lerp(1.18,1,fz)})`;
+  $('navV').style.filter='none'; $('navV').style.transform=$('navBg').style.transform; $('navBlur').style.transform=$('navBg').style.transform; $('navBlur').style.opacity=1-fz; $('navBlur').style.visibility=fz<1?'visible':'hidden'; vsync($('navV'),tc-C.ui[0]);   // hold the first frame through the focus pull; play once navigation is on
+  const nOff=eio(prog(tc,...D.navOff)), arr=eout(prog(tc,D.arrive,D.arrive+.45));
+  /* guidance follows the walk: turn ahead while walking with the dog, then straight to the wall */
+  {const walk1=prog(tc,2.9,6.0), turned=tc>=D.swap[0]+.45, walk2=prog(tc,D.swap[0]+1.6,D.arrive);
+   let txt, ic;
+   if(!turned){txt=`After ${(1.2-.1*walk1).toFixed(1)}km`;ic='icTurn'}   // next manoeuvre: turn right in 1.2km
+   else {txt=`${Math.max(.1,.5-.4*walk2).toFixed(1)}m`;ic=null}   // last stretch: no more turns, distance only
+   if($('fTxt').textContent!==txt)$('fTxt').textContent=txt;
+   ['icTurn','icUp'].forEach(id=>$(id).style.opacity=id===ic?1:0); $('fChip').querySelector('.ic').style.display=ic?'':'none';
+   const ac=eout(prog(tc,D.arrive+.2,D.arrive+.65))*(1-nOff), aw=$('arrWrap');
+   aw.style.opacity=ac; aw.style.visibility=ac>0?'visible':'hidden'; $('arrChip').style.transform=`translateX(-50%) translateY(${(1-ac)*14}px)`;}
+  [...$('sceneC').children].forEach(el=>{if(el.id!=='navBg') el.style.opacity=ui*(1-nOff)});
+  
+  $('floorWrap').style.transform=`translateY(${(1-ui)*14}px)`; {const fo=ui*cIn*(1-arr); $('floorWrap').style.opacity=fo; $('floorWrap').style.transform=`translateY(${(1-ui)*14}px) scale(${lerp(1,.94,arr)})`; $('floorWrap').style.visibility=fo>0?'visible':'hidden';}
+  $('nb').style.transform=`scale(${1-.04*Math.sin(Math.PI*prog(tc,C.tap,C.tap+.3))})`;
+
+  /* scene D: arrive at the pin's place, open it */
+  {const sw=eio(prog(tc,...D.swap)), lk=eio(prog(tc,...D.look)), op=eout(prog(tc,...D.cardIn)), sd=$('sceneD'), wv=$('wallV');
+   sd.style.visibility=sw>0?'visible':'hidden'; sd.style.opacity=sw;
+   $('wall').style.visibility='hidden';
+   const [a,b,tx,ty]=WT.A; wv.style.transform=`translate(${605*(1-WZ)}px,${417*(1-WZ)}px) scale(${WZ}) matrix(${a},${b},${-b},${a},${tx},${ty})`;
+   vsync(wv,tc-D.swap[0]); const vt=(playing&&wv.duration&&!wv.paused)?wv.currentTime:Math.max(0,tc-D.swap[0]);
+   $('navV').style.visibility=sw>=1?'hidden':'visible';
+   const seen=Math.min(1,wValid(vt)*1.25);   // pins ride on the wall as soon as it's tracked
+   WP.forEach((p,i)=>{const [cx,cy,ps]=wpAt(vt,i), k=eout(Math.min(1,seen*(1-i*.08))), o=(i===0?1:lerp(p.op,.5,lk))*k;
+     /* destination pin: a slow, slight breathing pulse until it's tapped */
+     const br=i===0?(1-prog(tc,D.tap,D.tap+.25))*k*(.5-.5*Math.cos(2*Math.PI*Math.max(0,tc-D.swap[0])/1.15)):0;
+     const w=p.w*ps; wpEls[i].forEach(el=>{el.style.opacity=o;el.style.width=el.style.height=w+'px';tr(el,cx-w/2,cy-w/2,` scale(${lerp(.6,1,k)*(1+.07*br)})`)});
+     if(i===0) wpEls[0][1].style.boxShadow=`0 6px 16px rgba(0,0,0,.18), 0 0 ${10+18*br}px ${2+5*br}px rgba(244,140,255,${.25+.35*br})`;});
+   const ri=eout(prog(tc,D.pins+.2,D.pins+.7)); ['wMetrics','wRailS','wRail'].forEach(id=>$(id).style.opacity=ri);
+   /* panel anchored to its pin: Figma offset from the pin centre (+67,-117) */
+   const [px,py]=wpAt(vt,0), cx=px+67, cy=py-117;
+   ['wCardS','wCard'].forEach(id=>{const el=$(id); el.style.opacity=op; el.style.visibility=op>0?'visible':'hidden';
+     el.style.transformOrigin=`${px-cx}px ${py-cy}px`; tr(el,cx,cy,` scale(${lerp(.82,1,op)})`)});
+   window.__wpc=[px,py];}
+  /* touch indicators (only during actions) */
+  const tp=$('tap'),dg=$('drag'); tp.style.opacity=0; dg.style.opacity=0;
+  {const [a,b]=RANGE.spin; if(t>=a-.15&&t<b+.2){const k=eio(prog(t,a,b)); dg.style.opacity=prog(t,a-.15,a)*(1-prog(t,b,b+.2)); tr(dg,113,lerp(470,434,k));}}
+  for(const [a,b] of STEPS){ if(t>=a-.15&&t<b+.2){const k=eio(prog(t,a,b)); dg.style.opacity=prog(t,a-.15,a)*(1-prog(t,b,b+.2)); tr(dg,lerp(760,520,k),402);} }
+  const q=prog(t,A.tap,A.tap+.45); if(t>=A.tap&&q<1){tp.style.opacity=1-q;tr(tp,604,676,` scale(${.5+.7*q})`)}
+  {const q=prog(t,C0,C0+.45); if(t>=C0&&q<1){tp.style.opacity=1-q;tr(tp,483+549,123+37,` scale(${.5+.7*q})`)}}
+  {const q=prog(tc,D.tap,D.tap+.45); if(tc>=D.tap&&q<1){tp.style.opacity=1-q;tr(tp,(window.__wpc||[608,263])[0],(window.__wpc||[608,263])[1],` scale(${.5+.7*q})`)}}
+  if(tb>=B.hold-.1&&tb<B.land+.25){dg.style.opacity=prog(tb,B.hold-.1,B.hold)*(1-prog(tb,B.land,B.land+.25)); tr(dg,fx+150,fy+120);}
+}
+function fit(){if(CAPTURE)return;const s=Math.min(innerWidth/1210,innerHeight/834);$('vp').style.transform=`scale(${s})`}
+addEventListener('resize',fit);
+async function boot(){
+  try{await Promise.all(['700 12px Manrope','400 12px Manrope','500 12px Manrope','600 12px Manrope','700 12px Montserrat','400 12px Montserrat','500 12px Montserrat'].map(f=>document.fonts.load(f)))}catch(e){}
+  await Promise.all([...document.images].map(i=>i.complete?0:new Promise(r=>{i.onload=i.onerror=r})));
+  fit();apply(0);window.__ready=true;if(!CAPTURE&&!/[?&]embed/.test(location.search))setTimeout(play,500);
+}
+window.__seek=t=>apply(t);window.__DUR=DUR;
+let playing=false,t0=0,tNow=0, TABHINT;
+window.__tab=()=>TABHINT;   // shell: which head-bar tab to highlight (Explore once we're at the pin)
+/* footage preview: video streamed from Higgsfield, slaved to the flow clock (image stays underneath as fallback) */
+function vsync(v,want){ if(!v||!v.duration)return; const end=v.duration-.05; want=Math.max(0,Math.min(end,want));
+  /* the video plays on its own clock; only small rate nudges keep it with the flow, hard seeks only on big drift */
+  if(playing&&want>0&&want<end){
+    if(v.paused){ if(!v.seeking&&Math.abs(v.currentTime-want)>.08) v.currentTime=want; v.play().catch(()=>{}); }
+    else { const d=want-v.currentTime; if(Math.abs(d)>.7&&!v.seeking){v.currentTime=want;v.playbackRate=1} else v.playbackRate=Math.max(.92,Math.min(1.08,1+d*.4)); } }
+  else { if(!v.paused)v.pause(); v.playbackRate=1; if(!v.seeking&&Math.abs(v.currentTime-want)>.04) v.currentTime=want; } }
+
+let raf=0;
+function play(){cancelAnimationFrame(raf);playing=true;t0=performance.now()-tNow*1000;raf=requestAnimationFrame(loop)}
+function loop(now){if(!playing)return;tNow=Math.max(0,(now-t0)/1000);if(tNow>=DUR){tNow=DUR;apply(DUR);playing=false;return}apply(tNow);raf=requestAnimationFrame(loop)}
+/* shell control: the showcase drives playback in persistent frames */
+window.__restart=()=>{playing=false;cancelAnimationFrame(raf);tNow=0;apply(0);play()};
+window.__pause=()=>{playing=false;cancelAnimationFrame(raf);try{$('navV').pause();$('wallV').pause()}catch(e){}};
+window.__resume=()=>{if(!playing&&tNow<DUR)play()};
+window.__t=()=>tNow;
+/* fallback channel when the shell can't reach this frame directly (opened from file://) */
+if(/[?&]embed/.test(location.search)){
+  const st=document.createElement('style');st.textContent='#head,#headS,#headA,#headAimg{visibility:hidden!important}';document.head.appendChild(st);
+  addEventListener('message',e=>{const c=e.data&&e.data.pp;if(c&&typeof window['__'+c]==='function')window['__'+c]()});
+  setInterval(()=>{try{const h=document.getElementById('head')||document.getElementById('headA');
+    parent.postMessage({ppTab:TABHINT,ppT:tNow,ppDur:DUR,ppReady:!!window.__ready,ppHead:h&&h.style.opacity!==''?+h.style.opacity:1},'*')}catch(e){}},50);
+}
+boot();
+</script>
+<script src="../mobile.js"></script>
+</body>
+</html>
