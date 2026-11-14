@@ -975,14 +975,14 @@ function stickyFai(root){
   const hook=()=>{if(!ME._map||ctl)return;ctl=faiMap(ME,info);if(ctl){ctl.setDay(0);ctl.view(0,-1,false);sync(true);}};
   ME._onMap=hook;hook();
   function frame(st){
-    const p=Math.max(0,st-S0),c=Math.min(p,C),Hd=c+(p>=C-1?k*MC:0);
+    const p=Math.max(0,st-S0),c=Math.min(p,C),Hd=Math.max(0,c+(p>=C-1?k*MC-x*C:0));
     const f=`${Math.round(Math.min(st,S0)*2)}|${Math.round(Hd*2)}`;
     const up=st>=S0-0.5;
     tabs.style.visibility=up?'hidden':'';bar.style.visibility=up?'visible':'hidden';
     if(f!==lastF){lastF=f;
       map.style.transform=`translateY(${(-Math.min(st,S0)-Hd/2).toFixed(1)}px)`;
       map.style.clipPath=Hd>0?`inset(${(Hd/2).toFixed(1)}px 0 ${(Hd/2).toFixed(1)}px 0)`:'';
-      map.style.boxShadow=Hd>=C&&k<1?'0 10px 24px -12px rgba(0,0,0,.25)':'none';
+      map.style.boxShadow=p>=C-1&&k<1?'0 10px 24px -12px rgba(0,0,0,.25)':'none';
       map.style.opacity=k>=.999&&p>=C-1?'0':'';map.style.pointerEvents=k>=.999&&p>=C-1?'none':'';
       dayBar.style.top=(Math.floor(TOPB+MH-Hd)-1)+'px';}
     const inBand=st>=END-1;
@@ -991,7 +991,7 @@ function stickyFai(root){
     if(!up)map.style.transform=`translateY(${(-st-Hd/2).toFixed(1)}px)`;
     return p;}
   function sync(force){const st=sc.scrollTop;const p=Math.max(0,st-S0);const nowCompact=p>=C-1;
-    const line=TOPB+(MH-Math.min(p,C)-(nowCompact?k*MC:0))+44+60;let on=stops[0];
+    const line=TOPB+(MH-Math.min(p,C)-(nowCompact?k*MC-xT*C:0))+44+60;let on=stops[0];
     for(const s of stops)if(s.y-st<line)on=s;
     if(!nowCompact)on=stops.find(s=>s.day===on.day&&s.i===0)||on;
     let dI=0;for(const d of days)if(d.y-st<=TOPB+MH-Math.min(p,C)+2)dI=+d.el.dataset.day;
@@ -999,16 +999,24 @@ function stickyFai(root){
     if(!ctl)return;
     if(on.day!==curDay){curDay=on.day;ctl.setDay(curDay);curStop=on.i;compact=nowCompact;ctl.setFocus(on.i);
       // a new day: bring the map back (if it was closed) and zoom out to that day's whole route first
-      if(kT===1)setK(0,true);ctl.view(curDay,-1,nowCompact);return;}
+      if(kT===1)setK(0,true);ctl.view(curDay,-1,nowCompact&&xT<1);return;}
     const sI=nowCompact?on.i:-1;
-    if(force||sI!==curStop||nowCompact!==compact){curStop=sI;compact=nowCompact;ctl.setFocus(sI);if(kT<1)ctl.view(curDay,sI,compact);}}
+    if(force||sI!==curStop||nowCompact!==compact){curStop=sI;compact=nowCompact;ctl.setFocus(sI);if(kT<1&&xT<1)ctl.view(curDay,sI,compact);}}
+  // expanded: from the 130px band back to the full map (tap the map or pull the day bar down); scrolling the plan folds it again
+  let x=0,xT=0,xRaf=0,xSt=0;
+  function setX(t){if(t===xT)return;xT=t;xSt=sc.scrollTop;cancelAnimationFrame(xRaf);const x0=x,t0=performance.now();
+    if(t===1&&ctl)ctl.view(curDay,-1,false);
+    (function f(now){const e=Math.min(1,(now-t0)/380),q=1-Math.pow(1-e,3);x=x0+(t-x0)*q;frame(sc.scrollTop);if(e<1)xRaf=requestAnimationFrame(f);else if(t===0)sync(true);})(t0);}
+  map.addEventListener('click',e=>{const st=sc.scrollTop;if(st>=END-1&&kT===0&&xT===0&&!map._dragged)setX(1);});
+  map.addEventListener('pointerdown',e=>{map._dragged=false;map._p0=[e.clientX,e.clientY];});
+  map.addEventListener('pointermove',e=>{if(map._p0&&Math.abs(e.clientX-map._p0[0])+Math.abs(e.clientY-map._p0[1])>8)map._dragged=true;});
   function setK(t,quiet){kT=t;cancelAnimationFrame(kRaf);const k0=k,t0=performance.now();
     (function f(now){const e=Math.min(1,(now-t0)/320),q=1-Math.pow(1-e,3);k=k0+(t-k0)*q;frame(sc.scrollTop);if(e<1)kRaf=requestAnimationFrame(f);else if(t===0&&!quiet)sync(true);})(t0);}
   const TARGET=[0,S0,END];
   function go(to){
     if(anim||to===state)return;anim=true;
     const from=sc.scrollTop,target=TARGET[to],t0=performance.now(),dur=440;
-    sc.style.overflowY='hidden';header(to>0);if(to<2&&k>0)setK(0);
+    sc.style.overflowY='hidden';header(to>0);if(to<2&&k>0)setK(0);if(to<2&&xT)setX(0);
     (function step(now){const e=Math.min(1,(now-t0)/dur),q=1-Math.pow(1-e,4);
       const st=from+(target-from)*q;sc.scrollTop=st;frame(st);
       if(e<1){requestAnimationFrame(step);return;}
@@ -1016,11 +1024,11 @@ function stickyFai(root){
   sc.addEventListener('scroll',()=>{const st=sc.scrollTop;frame(st);if(anim)return;
     if(state<2&&st>TARGET[state]+2)go(state+1);
     else if(state>0&&st<TARGET[state]-2)go(state-1);
-    else sync(false);},{passive:true});
+    else{if(xT===1&&Math.abs(st-xSt)>8)setX(0);sync(false);}},{passive:true});
   let dy0=null,fired=false;
   dayBar.addEventListener('pointerdown',e=>{dy0=e.clientY;fired=false;try{dayBar.setPointerCapture(e.pointerId);}catch(_){}});
   dayBar.addEventListener('pointermove',e=>{if(dy0==null||fired)return;const d=(e.clientY-dy0)/(SCALE||1);
-    if(d<-22&&kT===0){fired=true;setK(1);}else if(d>22&&kT===1){fired=true;setK(0);}});
+    if(d<-22){fired=true;if(xT===1)setX(0);else if(kT===0)setK(1);}else if(d>22){fired=true;if(kT===1)setK(0);else if(xT===0)setX(1);}});
   const upH=()=>{dy0=null;};dayBar.addEventListener('pointerup',upH);dayBar.addEventListener('pointercancel',upH);
   requestAnimationFrame(()=>{frame(sc.scrollTop);sync(true);});
   return true;
