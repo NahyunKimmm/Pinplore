@@ -97,9 +97,10 @@ function lift(els,f,col='255,141,65'){if(f<=0){unlift(els);return}const e=els[1]
   e.style.boxShadow=`0 0 ${12.6/60*LIFT.w*loc/sc}px rgba(${col},${f}), inset 0 0 0 ${1/sc*loc}px rgba(255,255,255,${.5*f})`}
 function unlift(els){els[1].style.filter='';els[1].style.opacity='';els[1].style.boxShadow=''}
 /* a pin's card: 380 wide under the lifted pin, folds back into it */
-function cardUnder(els,w,size,f){const k=380/size[0],[x,y]=xy(els[1]),top=LIFT.y+LIFT.w/2+18;
+function cardUnder(els,w,size,f,pinEl){const k=380/size[0],[x,y]=xy(els[1]),top=LIFT.y+LIFT.w/2+18;
   const m=M([x,y],[25,Math.min(top,V.H-24-size[1]*k)],k);place(w,m);
-  const o=[(LIFT.x-m.Ap[0])/k,(LIFT.y-m.Ap[1])/k];els.forEach(e=>e.style.transformOrigin=`${o[0]}px ${o[1]}px`)}
+  let pc=[LIFT.x,LIFT.y];if(pinEl){const r=pinEl.getBoundingClientRect();if(r.width)pc=[(r.left+r.width/2)/V.u,(r.top+r.height/2)/V.u]}
+  const o=[(pc[0]-m.Ap[0])/k,(pc[1]-m.Ap[1])/k];els.forEach(e=>e.style.transformOrigin=`${o[0]}px ${o[1]}px`)}
 const NAV={v:1};   // bottom bar visibility, read by the shell
 
 const LY={};     // per-flow layout (not L: the route flow owns that name)
@@ -108,18 +109,21 @@ if(FLOW==='explore'){
   LY.init=()=>{LY.rail=wrap([q('filterS'),q('metrics')]);LY.card=wrap([q('cardS'),q('card')]);
     LY.shade=wrap([q('shade')]);LY.col=wrap([q('column'),q('drag')]);
     LY.blur=blurLayer(LY.shade);
-    const p0=pinEls[0];LY.shade.parentNode.insertBefore(p0[0],LY.shade);LY.shade.parentNode.insertBefore(p0[1],LY.shade)};
+    const p0=pinEls[0];LY.card.after(p0[0],p0[1])};   // the opened pin sits above its card (Figma)
   LY.frame=t=>{FX=600;FY=417;placeWorld();
     place(LY.rail,M([1203,310],[424,cy(360)],1));
     LY.shade.style.opacity=0;
     place(LY.col,M([39,89],[24,158],303/262));
     const co=+q('card').style.opacity||0, open=cl(eo(pr(t,S1.cardIn[0],S1.cardIn[1])))*(1-ei(pr(t,S1.cardOut[0],S1.cardOut[1]))), sw=ei(pr(t,...S1.swipe));
     lift(pinEls[0],open);
-    if(co>0)cardUnder([q('cardS'),q('card')],LY.card,[337,482.5],open);
+    if(co>0)cardUnder([q('cardS'),q('card')],LY.card,[337,482.5],open,pinEls[0][1]);
+    pinEls.forEach(p=>p.forEach(el=>el.style.opacity=(+el.style.opacity||1)*(1-sw)));
     setBlur(LY.blur,Math.max(open,sw));NAV.v=1-open}
 }
 /* ======================= Drop a Pin ======================= */
 if(FLOW==='pin'){
+  { const ov=window.vsync, FREEZE=T.drag[0]-.15;
+    window.vsync=(v,want)=>{if(!v||!v.duration)return;if(want>=FREEZE){if(!v.paused)v.pause();if(!v.seeking&&Math.abs(v.currentTime-FREEZE)>.05)v.currentTime=Math.min(FREEZE,v.duration-.05);return}ov(v,want)} }
   LY.init=()=>{
     /* note card at its mobile size (Figma 1005:30788): 340 wide, back · badge · close on top */
     const css=document.createElement('style');css.textContent=`
@@ -144,7 +148,7 @@ if(FLOW==='pin'){
     LY.blur=blurLayer(q('cat'));
     LY.cat=wrap([q('cat')]);LY.note=wrap([q('note')])};
   LY.frame=t=>{
-    const cam=+((q('stage').style.transform||'').match(/translateX\((-?[\d.]+)px/)||[0,0])[1];
+    const cam=li(0,-141,ei(pr(t,...T.drag)));q('stage').style.transform=`translateX(${cam}px)`;   // no camera drift after the drop
     FX=li(640,934,ei(pr(t,...T.drag)));FY=417;placeWorld();
     const par={x:cam,y:2};
     /* the category card is pinned to the screen, not to the ground */
@@ -153,9 +157,7 @@ if(FLOW==='pin'){
     /* note opens under the dropped pin, at 1:1 */
     const {s,tx,ty}=world(), P=[tx+s*(PIN_C.x+cam),ty+s*(PIN_C.y+2)];
     const nh=q('note').offsetHeight||430;
-    const st=ei(pr(t,T.release,T.noteIn[1])), PY=li(P[1],cy(260.5),st), PX=li(P[0],214.5,st);
-    {const pe=q('pin');pe.style.transform+=` translate(${(PX-P[0])/s/(81/(PIN.s*s))}px,${(PY-P[1])/s/(81/(PIN.s*s))}px)`}
-    place(LY.note,M([295,175],[45,Math.min(PY+40.5+28,V.H-24-nh)],1),par);
+    place(LY.note,M([295,175],[45,Math.min(P[1]+40.5+28,V.H-24-nh)],1),par);
     {const pe=q('pin');pe.style.transformOrigin='50% 50%';pe.style.transform+=` scale(${81/(PIN.s*world().s)})`}
     {const on=pr(t,T.dictTap+.05,T.dictTap+.3)*(1-pr(t,T.dict[1],T.dict[1]+.25)),l=q('note').querySelector('.actions .l');
       l.style.opacity=1-on;l.style.transform=`translateX(${-12*on}px)`;l.style.pointerEvents=on>.5?'none':''}
@@ -168,17 +170,17 @@ if(FLOW==='pin'){
       tp.style.transform=`translate(${lx}px,${ly}px) scale(${sc})`}}
 }
 /* ======================= Create route ======================= */
-/* Figma: two steps — confirm the pin list (Make Route), then the finished route is shown (Navigate).
-   The flow's live editing (dragging a card into the route) is skipped: the mobile clock is re-mapped
-   onto the flow clock (WARP) so the list holds, the route is built, and the final route is shown. */
+/* Figma: range → theme → (building) → pin list (Make Route) → finished route (Navigate).
+   The flow's live editing (dragging a card into the route) is skipped: the mobile clock m is re-mapped
+   onto the flow clock (WARP) — the building card plays right after the theme, the list holds, then the
+   finished route is shown. */
 if(FLOW==='route'){
-  const P={listIn:7.15, listPop:.8, mk:9.5, build:9.9, routeIn:13.15};
-  LY.warp=m=>{if(m<P.listIn||m>=C0)return m;
-    if(m<P.listIn+P.listPop)return B0+(m-P.listIn)/P.listPop*.9;
-    if(m<P.build)return B0+.9;
-    if(m<P.routeIn)return L0+(m-P.build);
-    return B0+5.8};
+  const P={listIn:B0, listPop:.9, mk:B0+2.6, routeIn:B0+3.0};
+  LY.warp=m=>{if(m<P.listIn+P.listPop||m>=C0)return m; if(m<P.routeIn)return B0+P.listPop; return B0+5.8};
   LY.init=()=>{
+    const css=document.createElement('style');css.textContent=`
+#lcard .tag{font-size:13px!important;height:28px!important}#lcard h2{font-size:26px!important}
+#steps .st{font-size:17px!important;height:36px!important}#mlist img{display:block;width:100%;height:auto}`;document.head.appendChild(css);
     LY.range=wrap([q('range')]);LY.row=wrap([q('row')]);LY.create=wrap([q('create')]);
     LY.lcard=wrap([q('lcard')]);LY.pick=wrap([q('pick')]);
     LY.left=wrap([q('left')]);LY.right=wrap([q('right')]);LY.fly=wrap([q('fly')]);
@@ -186,47 +188,59 @@ if(FLOW==='route'){
     [...LY.navg.children].forEach(e=>e.style.opacity='');   // the flow fades sceneC's children; that is now the wrapper
     LY.floor=wrap([q('floorWrap')],true);LY.arr=wrap([q('arrWrap')],true);
     LY.wblur=blurLayer(q('wCardS'));wpEls[0].forEach(e=>LY.wblur.parentNode.insertBefore(e,q('wCardS')));
-    LY.rail=wrap([q('wRailS'),q('wRail'),q('wMetrics')]);LY.wcard=wrap([q('wCardS'),q('wCard')]);
+    LY.rail=wrap([q('wRailS'),q('wRail'),q('wMetrics')]);LY.wcard=wrap([q('wCardS'),q('wCard')]);LY.wcard.after(wpEls[0][0],wpEls[0][1]);
     LY.tap=wrap([q('tap')]);LY.drag=wrap([q('drag')]);
-    /* generated-route panel at Figma proportions: 72.5 header, wide map, list below, close button, no inline Navigate */
-    const R=q('right'),k=380/625,HD=72.5/k,MS=1.15,g=mk('div');
+    /* Generated Route panel rebuilt at Figma proportions (1005:29428): 380 wide, header 72.5, map 233, timeline list */
+    const R=q('right'),k=380/625,HD=72.5/k,MAPH=233/k,MS=MAPH/286,g=mk('div');
     g.style.cssText=`position:absolute;left:0;top:0;width:625px;height:351px;transform-origin:312.5px 65px;transform:translateY(${HD-65}px) scale(${MS})`;
     ['map','routeSvg','pinsImg','newPin'].forEach(id=>g.appendChild(q(id)));R.insertBefore(g,q('tl'));
-    const dy=HD+286*MS+16/k-367;['tl','oldList','newCard'].forEach(id=>{const e=q(id);e.style.top=(parseFloat(getComputedStyle(e).top)+dy)+'px'});
-    q('nb').style.display='none';
+    ['tl','oldList','newCard'].forEach(id=>q(id).style.display='none');
+    q('nb').style.display='none';    q('t5').style.display='none';q('t6').style.opacity=1;q('newPin').style.opacity=1;
+    /* list: timeline (x20) + pin cards (x60, ~300 wide), same cards as the Culture & Art list */
+    const L=mk('div');L.id='mlist';L.style.cssText=`position:absolute;left:0;top:${HD+MAPH}px;width:625px`;
+    const line=mk('div');line.style.cssText=`position:absolute;left:${33/k}px;top:${45/k}px;width:${1.2/k}px;height:2000px;background:rgba(255,255,255,.35)`;L.appendChild(line);
+    let y=31/k;['card0','card1','card2','card3'].forEach((c,i)=>{const im=mk('img');im.src=`assets/${c}.png`;
+      im.style.cssText=`position:absolute;left:${60/k}px;top:${y}px;width:${300/k}px`;L.appendChild(im);
+      const b=mk('div');b.textContent=i+1;b.style.cssText=`position:absolute;left:${(33-10)/k}px;top:${y+14/k}px;width:${20/k}px;height:${20/k}px;border-radius:999px;background:#1c1c1c;color:#fff;font:800 ${11/k}px/${20/k}px Montserrat,system-ui,sans-serif;text-align:center`;L.appendChild(b);
+      y+=(300*431/477+14)/k});
+    R.appendChild(L);
     const x=mk('div','mclose',IC.close);x.style.cssText+=`left:${317.6/k}px;top:${20.4/k}px;transform:scale(${1/k});transform-origin:0 0`;R.appendChild(x);
-    ['t5','t6'].forEach(id=>{const e=q(id);e.style.transformOrigin='0 0';e.style.transform='scale(1.08)';e.style.left=(20/k-7)+'px';e.style.top=(24/k-12)+'px'});
+    {const e=q('t6');e.style.transformOrigin='0 0';e.style.transform='scale(1.08)';e.style.left=(20/k-7)+'px';e.style.top=(24/k-12)+'px'}
     const xl=mk('div','mclose',IC.close);xl.style.cssText+='left:278px;top:16px;transform:scale(.95);transform-origin:0 0';q('left').appendChild(xl)};
   LY.frame=(t,m)=>{
-    const tc=t-C0, tb=t-B0;
+    const tc=t-C0;
     FX=tc<0?605:li(li(605,470,ei(pr(tc,...C.in))),560,ei(pr(tc,...D.swap)));FY=417;placeWorld();
     const W=V.W,H=V.H;
     /* A · range, then theme — one picker at a time, each with Select under it */
-    const SPLIT=2.25, rs=ei(pr(m,SPLIT-.1,SPLIT+.35));
+    const SPLIT=2.25, rs=ei(pr(m,SPLIT-.1,SPLIT+.35)), aGone=m>=A.out[1];
     const mRange=M([42,305.2],[125,cy(315)],179/142), mRow=M([605,403.5],[W/2,cy(458)],200/235);
-    place(LY.range,mRange);LY.range.style.opacity=1-rs;
-    place(LY.row,mRow);LY.row.style.opacity=rs;
+    place(LY.range,mRange);LY.range.style.opacity=aGone?0:1-rs;
+    place(LY.row,mRow);LY.row.style.opacity=aGone?0:rs;
     LY.create.style.opacity=0;
-    /* list → Make Route → building → finished route */
+    /* L · building (right after the theme): the chosen theme card flies into it */
+    const mL=M([375,279],[25,cy(330)],380/460);place(LY.lcard,mL);
+    place(LY.pick,mix(mRow,mL,ei(pr(t-L0,...L.fly))));LY.pick.style.opacity=m<P.listIn?1:0;
+    /* B · pin list (Make Route) → finished route (Navigate) */
     const kL=349/332, kR=380/625, ph=H-179-143;
     q('left').style.height=(ph/kL)+'px';q('right').style.height=(ph/kR)+'px';
-    const lo=m<P.listIn?0:1-pr(m,P.build-.3,P.build), ro=m<C0?pr(m,P.routeIn,P.routeIn+.35):1-pr(tc,...C.out);
+    const lo=m<P.listIn?0:(m<P.routeIn?1:1-pr(m,P.routeIn,P.routeIn+.25)), ro=m<C0?pr(m,P.routeIn,P.routeIn+.35):1-pr(tc,...C.out);
     place(LY.left,M([137,123],[40,179],kL));LY.left.style.opacity=lo;LY.left.style.visibility=lo>0?'visible':'hidden';
     place(LY.right,M([483,123],[25,179+16*(1-ro)],kR));LY.right.style.opacity=ro;LY.right.style.visibility=ro>0?'visible':'hidden';
     if(m>=P.listIn&&m<C0){q('sceneB').style.visibility='visible';q('sceneB').style.opacity=1}
-    const mL=M([375,279],[25,cy(330)],380/460);place(LY.lcard,mL);LY.pick.style.opacity=0;LY.fly.style.opacity=0;
+    LY.fly.style.opacity=0;
     place(LY.navg,M([469,31],[18.5,77],62/63));
     const mFloor=M([473,543],[83,by(546)],1);place(LY.floor,mFloor);place(LY.arr,mFloor);
     /* D · the pin's place: same rules as Explore */
     place(LY.rail,M([1203,310],[424,cy(360)],1));
-    const wopen=tc>=0?eo(pr(tc,...D.cardIn)):0;
+    const wopen=tc>=0?eo(pr(tc,...D.cardIn))*(tc>=D.tap?1:0):0;
     if(tc>=D.tap)lift(wpEls[0],wopen,'255,155,237');
-    if(+q('wCard').style.opacity>0)cardUnder([q('wCardS'),q('wCard')],LY.wcard,[337,501],wopen);
+    if(+q('wCard').style.opacity>0)cardUnder([q('wCardS'),q('wCard')],LY.wcard,[337,501],wopen,wpEls[0][1]);
     setBlur(LY.wblur,wopen);LY.rail.style.opacity=1-wopen;
     /* call to action + its tap */
     const aIn=eo(pr(m,...A.in))*(1-pr(m,...A.out));
-    if(m<P.listIn)cta('Select',null,134,cy(638),162,aIn);
-    else if(m<P.routeIn)cta('Make Route',null,41,by(812),348,1-pr(m,P.build-.3,P.build));
+    if(m<A.out[1])cta('Select',null,134,cy(638),162,aIn);
+    else if(m<P.listIn)cta('',null,41,by(812),348,0);
+    else if(m<P.routeIn)cta('Make Route',null,41,by(812),348,eo(pr(m,P.listIn+.3,P.listIn+.7))*(1-pr(m,P.routeIn,P.routeIn+.2)));
     else cta('Navigate','nav',25,by(812),380,ro);
     const tapQ=a=>m>=a&&m<a+.45?pr(m,a,a+.45):0;
     let tq=0,tx=215,ty=0;
@@ -235,8 +249,8 @@ if(FLOW==='route'){
     else if(tapQ(P.mk)){tq=tapQ(P.mk);ty=by(835)}
     else if(tapQ(C0)){tq=tapQ(C0);ty=by(836)}
     tapAt(tx,ty,tq);CTA._press=tq>0?Math.sin(Math.PI*tq):0;
-    /* bottom bar: hidden while the route is being made and while the pin's card is open */
-    NAV.v=m<P.listIn-.3?1:m<P.listIn?1-pr(m,P.listIn-.3,P.listIn):(tc>=C.ui[0]?(1-wopen)*eo(pr(tc,...C.ui)):0);
+    /* bottom bar: on range/theme; hidden from building until navigation; hidden while the pin's card is open */
+    NAV.v=m<A.out[0]?1:m<A.out[1]?1-pr(m,...A.out):(tc>=C.ui[0]?(1-wopen)*eo(pr(tc,...C.ui)):0);
     let md=null;
     if(m>=RANGE.spin[0]-.2&&m<RANGE.spin[1]+.3)md=mRange; else if(m<A.tap)md=mRow;
     place(LY.drag,md);LY.drag.style.opacity=md?1:0;LY.tap.style.opacity=tc>=D.tap-.1?1:0};
