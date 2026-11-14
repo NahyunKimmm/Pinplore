@@ -583,6 +583,9 @@ const CUSTOM={
     const fr=document.createElement('iframe');fr.src='ar/index.html';fr.title='AR lens';fr.setAttribute('allow','autoplay; fullscreen');
     fr.style.cssText='position:absolute;left:0;top:0;width:430px;height:calc(932px + var(--dy,0px));border:0;background:#000;pointer-events:auto';
     fx.appendChild(fr);navFrom('arLens',fx);fx.querySelectorAll('[data-act]').forEach(e=>e.style.pointerEvents='auto');
+    /* the AR lens hides the bottom bar while a panel is open (Figma Mobile AR) */
+    addEventListener('message',e=>{if(e.source!==fr.contentWindow||!e.data||!('ppNav' in e.data))return;const v=+e.data.ppNav;
+      [...fx.children].forEach(c=>{if(c!==fr){c.style.transition='opacity .25s ease';c.style.opacity=v;c.style.pointerEvents=v>.5?'':'none'}})});
     root.append(sc,fx);return root;},
   ranked(){const {root,cv}=pageShell('ranked',{navSrc:'home',plain:true});
     const cities=['All','Sokcho','Busan','Seoul','Jeju','Gangneung','Jeonju'];
