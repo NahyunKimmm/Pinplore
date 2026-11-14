@@ -879,7 +879,7 @@ function bookmarkDrag(tileEl,clientX,clientY){
     const use=document.createElementNS('http://www.w3.org/2000/svg','use');use.setAttribute('href','#v8qjit7');badge.appendChild(use);row.appendChild(badge);
     setTimeout(()=>{badge.style.transform='scale(1)';},300);
     setTimeout(()=>{use.setAttribute('href','#v1tk60tu');badge.style.transform='scale(1.12)';setTimeout(()=>badge.style.transform='scale(1)',160);},900);
-    setTimeout(()=>toast(hover===4?'New folder created · photo saved':'Saved to '+BM_NAMES[hover]),950);
+    // no toast: the badge on the folder is the confirmation
     close(1700);
   };
   addEventListener('pointermove',move,true);addEventListener('pointerup',up,true);addEventListener('pointercancel',up,true);
