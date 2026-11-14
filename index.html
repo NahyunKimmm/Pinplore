@@ -690,6 +690,12 @@ const CUSTOM={
       h('div',{cls:'btn','data-act':'back|toast:Itinerary saved'},'Save changes')));
     return root;},
 };
+/* curation: scroll ends below the last whole Area Vibe card (no half card under the tab bar), and the ground is white so
+   the end of the scroll (and the iOS bounce) never shows the blue gradient */
+(function(){const S=SCREENS.curation,nav=S.sc.find(n=>n[2]===430&&n[3]===96&&n[1]===S.h-96);
+  const NEW_H=1906+336+130;S.bg='background:#ffffff;';
+  const d=NEW_H-S.h;if(nav)nav[1]=NEW_H-96;S.h=NEW_H;
+  GLASS.curation=(GLASS.curation||[]).map(g=>g[1]>=NEW_H-d-96?[g[0],g[1]+d,...g.slice(2)]:g);})();
 /* curation: the Area Vibe cards sit on the white sheet — Figma (632:12331) is a white card, #ECEDF6 border, radius 15;
    its glass overlay reads as a grey tint with a second rounded edge on white, so they are drawn without it */
 GLASS.curation=(GLASS.curation||[]).filter(g=>!(g[0]===20&&g[2]===390&&g[1]>900&&g[1]<2300));
