@@ -129,6 +129,7 @@ if(FLOW==='pin'){
   LY.init=()=>{
     /* note card at its mobile size (Figma 1005:30788): 340 wide, back · badge · close on top */
     const css=document.createElement('style');css.textContent=`
+#stage{top:0!important}#bg,#bgv{height:834px!important}   /* no 2px black strip at the top */
 #note{width:340px!important;border-radius:25.448px!important}
 #note .top{justify-content:space-between!important;align-items:center;padding:20.36px 20.36px 10.18px!important;position:relative}
 #note .top .mclose,#note .top .mback{position:relative}
@@ -152,12 +153,12 @@ if(FLOW==='pin'){
   LY.frame=t=>{
     const cam=li(0,-141,ei(pr(t,...T.drag)));q('stage').style.transform=`translateX(${cam}px)`;   // no camera drift after the drop
     FX=li(640,934,ei(pr(t,...T.drag)));FY=417;placeWorld();
-    const par={x:cam,y:2};
+    const par={x:cam,y:0};
     /* the category card is pinned to the screen, not to the ground */
     const c=q('cat');c.style.transform=(c.style.transform||'').replace(/translate\(\s*-?[\d.]+px,/,'translate(0px,');
     place(LY.cat,M([97,270],[103,cy(314)],224/256),par);
     /* note opens under the dropped pin, at 1:1 */
-    const {s,tx,ty}=world(), P=[tx+s*(PIN_C.x+cam),ty+s*(PIN_C.y+2)];
+    const {s,tx,ty}=world(), P=[tx+s*(PIN_C.x+cam),ty+s*PIN_C.y];
     const nh=q('note').offsetHeight||430;
     place(LY.note,M([295,175],[45,Math.min(P[1]+40.5+28,V.H-24-nh)],1),par);
     {const pe=q('pin');pe.style.transformOrigin='50% 50%';pe.style.transform+=` scale(${81/(PIN.s*world().s)})`}
@@ -181,7 +182,7 @@ if(FLOW==='route'){
   LY.warp=m=>{if(m<P.listIn+P.listPop||m>=C0)return m; if(m<P.routeIn)return B0+P.listPop; return B0+5.8};
   LY.init=()=>{
     const css=document.createElement('style');css.textContent=`
-#lcard .tag{font-size:13px!important;height:28px!important}#lcard h2{font-size:26px!important}
+#lcard .hd{top:30px!important}#lcard .tag{font-size:13px!important;height:28px!important}#lcard h2{font-size:26px!important}
 #steps .st{font-size:17px!important;height:36px!important}#mlist img{display:block;width:100%;height:auto}`;document.head.appendChild(css);
     LY.range=wrap([q('range')]);LY.row=wrap([q('row')]);LY.create=wrap([q('create')]);
     LY.lcard=wrap([q('lcard')]);LY.pick=wrap([q('pick')]);
@@ -206,6 +207,26 @@ if(FLOW==='route'){
       const b=mk('div');b.textContent=i+1;b.style.cssText=`position:absolute;left:${(33-10)/k}px;top:${y+14/k}px;width:${20/k}px;height:${20/k}px;border-radius:999px;background:#1c1c1c;color:#fff;font:800 ${11/k}px/${20/k}px Montserrat,system-ui,sans-serif;text-align:center`;L.appendChild(b);
       y+=(300*431/477+14)/k});
     R.appendChild(L);
+    /* screen-space panel, Figma 1005:29428: 380 wide @ (25,179), header 72.5 (Montserrat Bold 18), map 380×233 (Figma export), timeline list */
+    const st=document.createElement('style');st.textContent=`
+#mroute{position:absolute;left:25px;top:179px;width:380px;border-radius:25.45px;overflow:hidden;opacity:0;pointer-events:none;
+  background:rgba(0,0,0,.2);backdrop-filter:blur(26px) saturate(1.1);-webkit-backdrop-filter:blur(26px) saturate(1.1);box-shadow:inset 0 0 0 .7px rgba(255,255,255,.15),0 4px 20px rgba(0,0,0,.1)}
+#mroute .hd{position:absolute;left:0;top:0;width:380px;height:72.54px;display:flex;align-items:center;justify-content:space-between;box-sizing:border-box;padding:20.36px 20.36px 10.18px}
+#mroute h3{margin:0;font:700 18px/27.14px Montserrat,system-ui,sans-serif;letter-spacing:-.5654px;color:#fff;white-space:nowrap}
+#mroute .x{position:static;width:42px;height:42px;box-sizing:border-box;border:.75px solid rgba(255,255,255,.1);background:rgba(255,255,255,.1)}
+#mroute .map{position:absolute;left:0;top:72.54px;width:380px;height:233px;display:block}
+#mroute .ls{position:absolute;left:0;top:305.54px;width:380px;bottom:0;overflow:hidden}
+#mroute .ln{position:absolute;left:34.4px;top:44px;width:1.2px;height:1200px;background:rgba(255,255,255,.35)}
+#mroute .n{position:absolute;left:22px;width:26px;height:26px;border-radius:999px;background:#1c1c1c;color:#fff;font:800 12px/26px Montserrat,system-ui,sans-serif;text-align:center}
+#mroute .c{position:absolute;left:60.36px;width:299.64px;display:block}`;document.head.appendChild(st);
+    const MR=mk('div');MR.id='mroute';MR.innerHTML=`<div class="hd"><h3>Generated Route (6)</h3></div><img class="map" src="assets/route_map_figma.png" alt=""><div class="ls"><i class="ln"></i></div>`;
+    const xx=mk('div','mclose',IC.close);xx.classList.add('x');MR.querySelector('.hd').appendChild(xx);
+    /* card PNGs carry a 22px (of 477) shadow margin: scale so the visible card is 299.64 wide at x60.36 */
+    const CK=299.64/433, H0={card0:431,card1:222,card2:362,card3:386};
+    const ls=MR.querySelector('.ls');let cy0=31;['card0','card1','card2','card3'].forEach((c,i)=>{
+      const im=mk('img','c');im.src=`assets/${c}.png`;Object.assign(im.style,{left:(60.36-22*CK)+'px',width:(477*CK)+'px',top:(cy0-22*CK)+'px'});ls.appendChild(im);
+      const n=mk('div','n');n.textContent=i+1;n.style.top=(cy0+18)+'px';ls.appendChild(n);cy0+=(H0[c]-44)*CK+14});
+    UI.insertBefore(MR,CTA);LY.mroute=MR;
     const x=mk('div','mclose',IC.close);x.style.cssText+=`left:${317.6/k}px;top:${20.4/k}px;transform:scale(${1/k});transform-origin:0 0`;R.appendChild(x);
     {const e=q('t6');e.style.transformOrigin='0 0';e.style.transform='scale(1.08)';e.style.left=(20/k-7)+'px';e.style.top=(24/k-12)+'px'}
     const xl=mk('div','mclose',IC.close);xl.style.cssText+='left:278px;top:16px;transform:scale(.95);transform-origin:0 0';q('left').appendChild(xl)};
@@ -227,7 +248,8 @@ if(FLOW==='route'){
     q('left').style.height=(ph/kL)+'px';q('right').style.height=(ph/kR)+'px';
     const lo=m<P.listIn?0:(m<P.routeIn?1:1-pr(m,P.routeIn,P.routeIn+.25)), ro=m<C0?pr(m,P.routeIn,P.routeIn+.35):1-pr(tc,...C.out);
     place(LY.left,M([137,123],[40,179],kL));LY.left.style.opacity=lo;LY.left.style.visibility=lo>0?'visible':'hidden';
-    place(LY.right,M([483,123],[25,179+16*(1-ro)],kR));LY.right.style.opacity=ro;LY.right.style.visibility=ro>0?'visible':'hidden';
+    place(LY.right,M([483,123],[25,179],kR));LY.right.style.opacity=0;LY.right.style.visibility='hidden';
+    {const r=LY.mroute;r.style.height=ph+'px';r.style.opacity=ro;r.style.transform=`translateY(${16*(1-ro)}px)`;r.style.pointerEvents=ro>.5?'auto':'none'}
     if(m>=P.listIn&&m<C0){q('sceneB').style.visibility='visible';q('sceneB').style.opacity=1}
     LY.fly.style.opacity=0;
     place(LY.navg,M([469,31],[18.5,77],62/63));
