@@ -42,6 +42,7 @@ const $=id=>document.getElementById(id);
 const tabs=[...document.querySelectorAll('.head button')];
 let idx=-1, endAt=0, seq=0;
 const MSG=FLOWS.map(()=>({t:0,head:1,ready:false}));
+addEventListener('message',e=>{if(e.data&&e.data.ppExit){go(0);return}});
 addEventListener('message',e=>{const i=frames.findIndex(f=>f.contentWindow===e.source),d=e.data;
   if(i<0||!d||!('ppT' in d))return;MSG[i].t=d.ppT;MSG[i].head=d.ppHead;if(d.ppDur)FLOWS[i].dur=d.ppDur;if(d.ppReady&&!MSG[i].ready){MSG[i].ready=true;MSG[i].res?.()}});
 const call=(i,k,...a)=>{try{const fn=frames[i].contentWindow[k];if(typeof fn==='function')return fn(...a)}catch(e){

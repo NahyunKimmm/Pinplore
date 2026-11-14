@@ -58,7 +58,7 @@ function panelAt(els,w,P,size,gap=26){
 const cy=y=>y+(V.H-932)/2, by=y=>y+(V.H-932);
 const st2=document.createElement('style');st2.textContent=`
 .mblur{position:absolute;left:-400px;top:-400px;width:2400px;height:1800px;pointer-events:none;opacity:0;
-  backdrop-filter:blur(14px) saturate(1.05);-webkit-backdrop-filter:blur(14px) saturate(1.05);background:rgba(0,0,0,.06)}
+  backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)}
 #mui{position:fixed;left:0;top:0;width:430px;height:0;transform-origin:0 0;pointer-events:none;z-index:60}
 #mcta{position:absolute;display:flex;align-items:center;justify-content:center;gap:8px;height:46px;border-radius:32px;
   background:rgba(255,255,255,.8);box-shadow:0 4px 20px rgba(0,0,0,.1);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
@@ -68,12 +68,14 @@ const st2=document.createElement('style');st2.textContent=`
   border:2px solid rgba(255,255,255,.9);box-shadow:0 0 0 1px rgba(0,0,0,.12),0 2px 10px rgba(0,0,0,.2);opacity:0}
 .mclose,.mback{position:absolute;width:42px;height:42px;border-radius:999px;background:rgba(255,255,255,.1);
   box-shadow:inset 0 0 0 .75px rgba(255,255,255,.1);display:flex;align-items:center;justify-content:center}
-.mclose svg,.mback svg{width:24px;height:24px}`;
+.mclose svg,.mback svg{width:24px;height:24px}
+.mclose{pointer-events:auto;cursor:pointer;z-index:5}`;
 document.head.appendChild(st2);
 const IC={back:'<svg viewBox="0 0 24 24" fill="none"><path d="M20 12.75C20.4142 12.75 20.75 12.4142 20.75 12C20.75 11.5858 20.4142 11.25 20 11.25V12V12.75ZM4 11.25C3.58579 11.25 3.25 11.5858 3.25 12C3.25 12.4142 3.58579 12.75 4 12.75V12V11.25ZM7.47204 17.5327C7.76624 17.8243 8.24111 17.8222 8.53269 17.528C8.82427 17.2338 8.82216 16.7589 8.52796 16.4673L8 17L7.47204 17.5327ZM6.23703 15.2527L6.76499 14.72H6.76499L6.23703 15.2527ZM6.23703 8.74731L5.70907 8.21462H5.70907L6.23703 8.74731ZM8.52796 7.53269C8.82216 7.24111 8.82428 6.76624 8.53269 6.47204C8.24111 6.17784 7.76624 6.17573 7.47204 6.46731L8 7L8.52796 7.53269ZM4.01989 12.3133L3.27591 12.4082L3.27591 12.4082L4.01989 12.3133ZM4.01989 11.6867L3.27591 11.5918L3.27591 11.5918L4.01989 11.6867ZM20 12V11.25H4V12V12.75H20V12ZM8 17L8.52796 16.4673L6.76499 14.72L6.23703 15.2527L5.70907 15.7854L7.47204 17.5327L8 17ZM6.23703 8.74731L6.76499 9.28L8.52796 7.53269L8 7L7.47204 6.46731L5.70907 8.21462L6.23703 8.74731ZM6.23703 15.2527L6.76499 14.72C6.0495 14.0109 5.55869 13.5228 5.22659 13.1093C4.904 12.7076 4.79332 12.4496 4.76387 12.2185L4.01989 12.3133L3.27591 12.4082C3.35469 13.0263 3.64963 13.5412 4.05706 14.0485C4.45498 14.544 5.01863 15.1011 5.70907 15.7854L6.23703 15.2527ZM6.23703 8.74731L5.70907 8.21462C5.01863 8.89892 4.45498 9.45597 4.05706 9.95146C3.64963 10.4588 3.3547 10.9737 3.27591 11.5918L4.01989 11.6867L4.76387 11.7815C4.79332 11.5504 4.904 11.2924 5.22659 10.8907C5.55869 10.4772 6.0495 9.98914 6.76499 9.28L6.23703 8.74731ZM4.01989 12.3133L4.76387 12.2185C4.74538 12.0734 4.74538 11.9266 4.76387 11.7815L4.01989 11.6867L3.27591 11.5918C3.24136 11.8629 3.24136 12.1371 3.27591 12.4082L4.01989 12.3133Z" fill="white"/></svg>',
   close:'<svg viewBox="0 0 24 24" fill="none"><path d="M5 5L19 19M5.00003 19L12 12L19 5" stroke="white" stroke-width="2" stroke-linecap="round"/></svg>',
   nav:'<svg viewBox="0 0 24 24" fill="none"><path d="M10.4004 1.18411C11.3286 0.648288 12.4722 0.64824 13.4004 1.18411L20.5 5.28275C21.4282 5.81865 22 6.80958 22 7.88138V16.0796C22 17.1514 21.4282 18.1424 20.5 18.6783L13.4004 22.7779C12.4723 23.3137 11.3285 23.3135 10.4004 22.7779L3.2998 18.6783C2.3716 18.1424 1.7998 17.1514 1.7998 16.0796V7.88138C1.7998 6.80958 2.3716 5.81865 3.2998 5.28275L10.4004 1.18411ZM13.1924 6.47415C12.7033 6.10149 12.0049 6.45604 12.0049 7.07669V8.94193H11.2178C8.86799 8.94202 6.96311 10.8744 6.96289 13.2583V17.0064C6.96302 17.3591 7.14891 17.6856 7.45215 17.8658L9.15137 18.8736C9.48467 19.0713 9.90723 18.8314 9.90723 18.4439V13.2583C9.90744 12.5242 10.4941 11.9293 11.2178 11.9292H12.0049V13.5601C12.0049 14.1637 12.6703 14.5222 13.1631 14.1841L17.6367 11.1099C18.0584 10.8202 18.0738 10.1959 17.667 9.88529L13.1924 6.47415Z" fill="#3D3D3D"/></svg>'};
-const mk=(tag,cls,html)=>{const e=document.createElement(tag);if(cls)e.className=cls;if(html)e.innerHTML=html;return e};
+const mk=(tag,cls,html)=>{const e=document.createElement(tag);if(cls)e.className=cls;if(html)e.innerHTML=html;
+  if(cls==='mclose')e.addEventListener('click',ev=>{ev.stopPropagation();try{parent.postMessage({ppExit:1},'*')}catch(_){}});return e};
 /* screen-space layer (design px) for the call-to-action and its tap */
 const UI=mk('div');UI.id='mui';const CTA=mk('div');CTA.id='mcta';const TAP=mk('div');TAP.id='mtap';UI.append(CTA,TAP);document.body.appendChild(UI);
 function placeUI(){UI.style.transform=`scale(${V.u})`}
@@ -109,7 +111,7 @@ if(FLOW==='explore'){
     const co=+q('card').style.opacity||0, open=cl(eo(pr(t,S1.cardIn[0],S1.cardIn[1])))*(1-ei(pr(t,S1.cardOut[0],S1.cardOut[1]))), sw=ei(pr(t,...S1.swipe));
     lift(pinEls[0],open);
     if(co>0)cardUnder([q('cardS'),q('card')],LY.card,[337,482.5],open);
-    setBlur(LY.blur,Math.max(open,sw));NAV.v=1-Math.max(open,sw)}
+    setBlur(LY.blur,Math.max(open,sw));NAV.v=1-open}
 }
 /* ======================= Drop a Pin ======================= */
 if(FLOW==='pin'){
@@ -147,6 +149,9 @@ if(FLOW==='pin'){
     const {s,tx,ty}=world(), P=[tx+s*(PIN_C.x+cam),ty+s*(PIN_C.y+2)];
     const nh=q('note').offsetHeight||430;
     place(LY.note,M([295,175],[45,Math.min(P[1]+s*PIN.s/2+28,V.H-24-nh)],1),par);
+    {const pe=q('pin');pe.style.transformOrigin='50% 50%';pe.style.transform+=` scale(${81/(PIN.s*world().s)})`}
+    {const on=pr(t,T.dictTap+.05,T.dictTap+.3)*(1-pr(t,T.dict[1],T.dict[1]+.25)),l=q('note').querySelector('.actions .l');
+      l.style.opacity=1-on;l.style.transform=`translateX(${-12*on}px)`;l.style.pointerEvents=on>.5?'none':''}
     const cIn=eo(pr(t,...T.catIn))*(1-pr(t,...T.catOut)), nIn=eo(pr(t,...T.noteIn))*(1-pr(t,...T.noteOut));
     setBlur(LY.blur,Math.max(cIn*(1-pr(t,T.drag[0]-.2,T.drag[0]+.2)),nIn));
     NAV.v=1-cl(cIn+nIn+(t>=T.press&&t<T.noteIn[1]?1:0));
@@ -156,7 +161,16 @@ if(FLOW==='pin'){
       tp.style.transform=`translate(${lx}px,${ly}px) scale(${sc})`}}
 }
 /* ======================= Create route ======================= */
+/* Figma: two steps — confirm the pin list (Make Route), then the finished route is shown (Navigate).
+   The flow's live editing (dragging a card into the route) is skipped: the mobile clock is re-mapped
+   onto the flow clock (WARP) so the list holds, the route is built, and the final route is shown. */
 if(FLOW==='route'){
+  const P={listIn:7.15, listPop:.8, mk:9.5, build:9.9, routeIn:13.15};
+  LY.warp=m=>{if(m<P.listIn||m>=C0)return m;
+    if(m<P.listIn+P.listPop)return B0+(m-P.listIn)/P.listPop*.9;
+    if(m<P.build)return B0+.9;
+    if(m<P.routeIn)return L0+(m-P.build);
+    return B0+5.8};
   LY.init=()=>{
     LY.range=wrap([q('range')]);LY.row=wrap([q('row')]);LY.create=wrap([q('create')]);
     LY.lcard=wrap([q('lcard')]);LY.pick=wrap([q('pick')]);
@@ -167,70 +181,69 @@ if(FLOW==='route'){
     LY.wblur=blurLayer(q('wCardS'));wpEls[0].forEach(e=>LY.wblur.parentNode.insertBefore(e,q('wCardS')));
     LY.rail=wrap([q('wRailS'),q('wRail'),q('wMetrics')]);LY.wcard=wrap([q('wCardS'),q('wCard')]);
     LY.tap=wrap([q('tap')]);LY.drag=wrap([q('drag')]);
-    /* generated-route panel at mobile proportions: map on top (cropped), list below, close button, no inline Navigate */
-    const R=q('right'),g=mk('div');g.style.cssText='position:absolute;left:0;top:0;width:625px;height:351px;transform-origin:0 0';
-    ['map','routeSvg','pinsImg','newPin'].forEach(id=>g.appendChild(q(id)));R.insertBefore(g,q('tl'));LY.mapG=g;
+    /* generated-route panel at Figma proportions: 72.5 header, wide map, list below, close button, no inline Navigate */
+    const R=q('right'),k=380/625,HD=72.5/k,MS=1.15,g=mk('div');
+    g.style.cssText=`position:absolute;left:0;top:0;width:625px;height:351px;transform-origin:312.5px 65px;transform:translateY(${HD-65}px) scale(${MS})`;
+    ['map','routeSvg','pinsImg','newPin'].forEach(id=>g.appendChild(q(id)));R.insertBefore(g,q('tl'));
+    const dy=HD+286*MS+16/k-367;['tl','oldList','newCard'].forEach(id=>{const e=q(id);e.style.top=(parseFloat(getComputedStyle(e).top)+dy)+'px'});
     q('nb').style.display='none';
-    const x=mk('div','mclose',IC.close);x.style.cssText+='left:551px;top:16px;transform:scale(1.55);transform-origin:0 0';R.appendChild(x);
-    ['t5','t6'].forEach(id=>{const e=q(id);e.style.transformOrigin='0 0';e.style.transform='scale(1.3)';e.style.left='20px';e.style.top='22px'});
+    const x=mk('div','mclose',IC.close);x.style.cssText+=`left:${317.6/k}px;top:${20.4/k}px;transform:scale(${1/k});transform-origin:0 0`;R.appendChild(x);
+    ['t5','t6'].forEach(id=>{const e=q(id);e.style.transformOrigin='0 0';e.style.transform='scale(1.08)';e.style.left=(20/k-7)+'px';e.style.top=(24/k-12)+'px'});
     const xl=mk('div','mclose',IC.close);xl.style.cssText+='left:278px;top:16px;transform:scale(.95);transform-origin:0 0';q('left').appendChild(xl)};
-  LY.frame=t=>{
-    const tc=t-C0, tb=t-B0, tl=t-L0;
+  LY.frame=(t,m)=>{
+    const tc=t-C0, tb=t-B0;
     FX=tc<0?605:li(li(605,470,ei(pr(tc,...C.in))),560,ei(pr(tc,...D.swap)));FY=417;placeWorld();
     const W=V.W,H=V.H;
     /* A · range, then theme — one picker at a time, each with Select under it */
-    const SPLIT=2.25, rs=ei(pr(t,SPLIT-.1,SPLIT+.35));
+    const SPLIT=2.25, rs=ei(pr(m,SPLIT-.1,SPLIT+.35));
     const mRange=M([42,305.2],[125,cy(315)],179/142), mRow=M([605,403.5],[W/2,cy(458)],200/235);
     place(LY.range,mRange);LY.range.style.opacity=1-rs;
     place(LY.row,mRow);LY.row.style.opacity=rs;
     LY.create.style.opacity=0;
-    /* L · building the route */
-    const mL=M([375,279],[25,cy(330)],380/460);place(LY.lcard,mL);
-    place(LY.pick,mix(mRow,mL,ei(pr(tl,...L.fly))));
-    /* B · Visual Inspiration list → Make Route → Generated Route */
-    const SW=[B.fly[0]-.45,B.fly[0]], sw=ei(pr(tb,...SW));
+    /* list → Make Route → building → finished route */
     const kL=349/332, kR=380/625, ph=H-179-143;
     q('left').style.height=(ph/kL)+'px';q('right').style.height=(ph/kR)+'px';
-    place(LY.left,M([137,123],[40-30*sw,179],kL));LY.left.style.opacity=1-sw;
-    place(LY.right,M([483,123],[25+30*(1-sw),179],kR));LY.right.style.opacity=sw;
-        LY.fly.style.opacity=0;
+    const lo=m<P.listIn?0:1-pr(m,P.build-.3,P.build), ro=m<C0?pr(m,P.routeIn,P.routeIn+.35):1-pr(tc,...C.out);
+    place(LY.left,M([137,123],[40,179],kL));LY.left.style.opacity=lo;LY.left.style.visibility=lo>0?'visible':'hidden';
+    place(LY.right,M([483,123],[25,179+16*(1-ro)],kR));LY.right.style.opacity=ro;LY.right.style.visibility=ro>0?'visible':'hidden';
+    if(m>=P.listIn&&m<C0){q('sceneB').style.visibility='visible';q('sceneB').style.opacity=1}
+    const mL=M([375,279],[25,cy(330)],380/460);place(LY.lcard,mL);LY.pick.style.opacity=0;LY.fly.style.opacity=0;
     place(LY.navg,M([469,31],[18.5,77],62/63));
     const mFloor=M([473,543],[83,by(546)],1);place(LY.floor,mFloor);place(LY.arr,mFloor);
     /* D · the pin's place: same rules as Explore */
     place(LY.rail,M([1203,310],[424,cy(360)],1));
-    const wo=eo(pr(tc,...D.cardIn)), wopen=tc>=0?wo:0;
+    const wopen=tc>=0?eo(pr(tc,...D.cardIn)):0;
     if(tc>=D.tap)lift(wpEls[0],wopen);
     if(+q('wCard').style.opacity>0)cardUnder([q('wCardS'),q('wCard')],LY.wcard,[337,501],wopen);
     setBlur(LY.wblur,wopen);LY.rail.style.opacity=1-wopen;
     /* call to action + its tap */
-    const aIn=eo(pr(t,...A.in))*(1-pr(t,...A.out)), bIn=tb>=0?eo(pr(tb,...B.in))*(1-pr(tc,...C.out)):0;
-    const tapQ=(a)=>pr(t,a,a+.45)*(t>=a?1:0);
-    if(bIn>0){const nav=sw>.5;nav?cta('Navigate','nav',25,by(812),380,bIn):cta('Make Route',null,41,by(812),348,bIn)}
-    else cta('Select',null,134,cy(638),162,aIn);
-    const T1=SPLIT-.35, T2=A.tap, T3=B0+SW[0]-.25;
-    let tq=0,tx=0,ty=0;
-    if(t>=T1&&t<T1+.45){tq=tapQ(T1);tx=215;ty=cy(661)}
-    else if(t>=T2&&t<T2+.45){tq=tapQ(T2);tx=215;ty=cy(661)}
-    else if(t>=T3&&t<T3+.45){tq=tapQ(T3);tx=215;ty=by(835)}
-    else if(t>=C0&&t<C0+.45){tq=tapQ(C0);tx=215;ty=by(836)}
+    const aIn=eo(pr(m,...A.in))*(1-pr(m,...A.out));
+    if(m<P.listIn)cta('Select',null,134,cy(638),162,aIn);
+    else if(m<P.routeIn)cta('Make Route',null,41,by(812),348,1-pr(m,P.build-.3,P.build));
+    else cta('Navigate','nav',25,by(812),380,ro);
+    const tapQ=a=>m>=a&&m<a+.45?pr(m,a,a+.45):0;
+    let tq=0,tx=215,ty=0;
+    if(tapQ(SPLIT-.35)){tq=tapQ(SPLIT-.35);ty=cy(661)}
+    else if(tapQ(A.tap)){tq=tapQ(A.tap);ty=cy(661)}
+    else if(tapQ(P.mk)){tq=tapQ(P.mk);ty=by(835)}
+    else if(tapQ(C0)){tq=tapQ(C0);ty=by(836)}
     tapAt(tx,ty,tq);CTA._press=tq>0?Math.sin(Math.PI*tq):0;
-    NAV.v=t<.3?1:(tc>=C.ui[0]&&tc<D.cardIn[0]?eo(pr(tc,...C.ui)):tc>=D.cardIn[0]?1-wopen:0);
-    /* touch indicators sit on whichever control the action belongs to (stage-drawn taps on buttons are replaced above) */
+    /* bottom bar: hidden while the route is being made and while the pin's card is open */
+    NAV.v=m<.3?1:(tc>=C.ui[0]?(1-wopen)*eo(pr(tc,...C.ui)):0);
     let md=null;
-    if(t>=RANGE.spin[0]-.2&&t<RANGE.spin[1]+.3)md=mRange; else if(t<A.tap)md=mRow;
-    place(LY.tap,tc>=D.tap-.1?null:null);LY.tap.style.opacity=tc>=D.tap-.1?1:0;
-    place(LY.drag,md);LY.drag.style.opacity=(tb>=0&&tc<0)?0:1};
+    if(m>=RANGE.spin[0]-.2&&m<RANGE.spin[1]+.3)md=mRange; else if(m<A.tap)md=mRow;
+    place(LY.drag,md);LY.drag.style.opacity=md?1:0;LY.tap.style.opacity=tc>=D.tap-.1?1:0};
 }
 window.__mnav=()=>NAV.v;
 
 /* ---------- hook into the flow ---------- */
 let ready=false;
 const origApply=window.apply;
-window.apply=function(t){origApply(t);if(ready)try{LY.frame(t)}catch(e){console.warn(e)}};
+window.apply=function(m){const t=LY.warp?LY.warp(m):m;origApply(t);if(ready)try{LY.frame(t,m)}catch(e){console.warn(e)}};
 window.fit=function(){dims();placeWorld();placeUI()};
 addEventListener('resize',()=>{dims();placeUI();try{window.__seek&&window.__seek(window.__t?window.__t():0)}catch(e){}});
-dims();placeUI();LY.init();ready=true;try{LY.frame(0)}catch(e){}placeWorld();
+dims();placeUI();LY.init();ready=true;try{LY.frame(0,0)}catch(e){}placeWorld();
 if(FLOW==='pin'&&typeof measure==='function'){try{measure()}catch(e){}}
 /* the pin flow measures its buttons on restart: lay out the t=0 screen first so it measures where they now sit */
-if(FLOW==='pin'){const r=window.__restart;window.__restart=()=>{q('stage').style.transform='translateX(0px)';try{LY.frame(0)}catch(e){}r()}}
+if(FLOW==='pin'){const r=window.__restart;window.__restart=()=>{q('stage').style.transform='translateX(0px)';try{LY.frame(0,0)}catch(e){}r()}}
 })();
