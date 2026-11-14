@@ -706,7 +706,7 @@ function stickyFolder(root){
   // in-flow tab bar (scrolls with the page during the transition) + fixed copy (collapsed state)
   const strip=box(`left:0;top:${HB+S0-panel._abs[1]-1}px;width:430px;height:${BAR_H+1}px;background:#fff;z-index:8`);
   panel.insertBefore(strip,panel.firstChild);tabs.style.zIndex='9';
-  const bar=box(`left:0;top:${HB-1}px;width:430px;height:${BAR_H+1}px;background:#fff;opacity:0;pointer-events:none`);
+  const bar=box(`left:0;top:${HB-1}px;width:430px;height:${BAR_H+2}px;background:#fff;opacity:0;pointer-events:none`);
   const tabsCopy=tabs.cloneNode(true);tabsCopy.style.left=tabs._abs[0]+'px';tabsCopy.style.top=(TAB_Y-HB+1)+'px';tabsCopy.style.zIndex='';
   bar.appendChild(tabsCopy);
   const tb=tabs._abs;
@@ -949,7 +949,7 @@ function stickyFai(root){
   const head=fx.firstElementChild;
   const white=box(`left:0;top:0;width:430px;height:${HB+1}px;background:#fff;opacity:0;pointer-events:none;transition:opacity .25s ease`);
   fx.insertBefore(white,head);
-  const bar=box(`left:0;top:${HB-1}px;width:430px;height:${BAR_H+1}px;background:#fff;visibility:hidden`);
+  const bar=box(`left:0;top:${HB-1}px;width:430px;height:${BAR_H+2}px;background:#fff;visibility:hidden`);
   const tabsCopy=tabs.cloneNode(true);tabsCopy.style.left=tabs._abs[0]+'px';tabsCopy.style.top=(TAB_Y-HB+1)+'px';tabsCopy.style.zIndex='';tabsCopy.style.transform='';
   bar.appendChild(tabsCopy);
   const tb=tabs._abs,cv=sc.firstElementChild;
@@ -959,8 +959,18 @@ function stickyFai(root){
   // the map, in screen coordinates
   map.remove();map.style.left=map._abs[0]+'px';map.style.top=yM+'px';map.style.zIndex='';map.style.willChange='transform,clip-path';
   // sticky day bar: copy of the day header under the map band; also the handle that closes / reopens the map
-  const dayBar=box(`left:0;top:0;width:430px;height:44px;background:#fff;opacity:0;pointer-events:none;touch-action:none;cursor:grab`);
-  const dh=days[0].el.cloneNode(true);dh.style.left='20px';dh.style.top='12px';dh.style.zIndex='';dayBar.appendChild(dh);
+  // day bar lines its label up exactly with the in-flow day header at rest, and is tall enough to cover it
+  const barTop0=Math.floor(TOPB+MC)-1, dhOff=Math.round((days[0].y-END)-barTop0), dhH=days[0].el._abs[3];
+  const DBH=dhOff+dhH+8;
+  // cards snap under the day bar, at the spot the first card sits when the map settles at 130px
+  const SNAP0=stops[0].y-END;
+  // (snap marks sit directly in the scroll canvas: the panel and canvas clip their overflow, which would make them the snap owner)
+  const cvEl=sc;
+  const marks=stops.map(t=>{const d=box(`left:0;top:${t.y}px;width:1px;height:1px;pointer-events:none;scroll-snap-align:start`);cvEl.appendChild(d);return d;});
+  const snapMargin=()=>{const m=Math.round(SNAP0-kT*MC);for(const d of marks)d.style.scrollMarginTop=m+'px';};
+  const snapOn=on=>{sc.style.scrollSnapType=on?'y mandatory':'none';};
+  const dayBar=box(`left:0;top:0;width:430px;height:${DBH}px;background:#fff;opacity:0;pointer-events:none;touch-action:none;cursor:grab`);
+  const dh=days[0].el.cloneNode(true);dh.style.left='20px';dh.style.top=dhOff+'px';dh.style.zIndex='';dayBar.appendChild(dh);
   dayBar.appendChild(box('left:195px;top:4px;width:40px;height:4px;border-radius:2px;background:#d6d6d6'));
   const after=head.nextSibling;fx.insertBefore(map,after);fx.insertBefore(bar,after);fx.insertBefore(dayBar,after);
   let mini=null;
@@ -991,7 +1001,7 @@ function stickyFai(root){
     if(!up)map.style.transform=`translateY(${(-st-Hd/2).toFixed(1)}px)`;
     return p;}
   function sync(force){const st=sc.scrollTop;const p=Math.max(0,st-S0);const nowCompact=p>=C-1;
-    const line=TOPB+(MH-Math.min(p,C)-(nowCompact?k*MC-xT*C:0))+44+60;let on=stops[0];
+    const line=nowCompact?SNAP0-kT*MC+40:TOPB+(MH-Math.min(p,C))+44+60;let on=stops[0];
     for(const s of stops)if(s.y-st<line)on=s;
     if(!nowCompact)on=stops.find(s=>s.day===on.day&&s.i===0)||on;
     let dI=0;for(const d of days)if(d.y-st<=TOPB+MH-Math.min(p,C)+2)dI=+d.el.dataset.day;
@@ -1010,17 +1020,17 @@ function stickyFai(root){
   map.addEventListener('click',e=>{const st=sc.scrollTop;if(st>=END-1&&kT===0&&xT===0&&!map._dragged)setX(1);});
   map.addEventListener('pointerdown',e=>{map._dragged=false;map._p0=[e.clientX,e.clientY];});
   map.addEventListener('pointermove',e=>{if(map._p0&&Math.abs(e.clientX-map._p0[0])+Math.abs(e.clientY-map._p0[1])>8)map._dragged=true;});
-  function setK(t,quiet){kT=t;cancelAnimationFrame(kRaf);const k0=k,t0=performance.now();
+  function setK(t,quiet){kT=t;snapMargin();cancelAnimationFrame(kRaf);const k0=k,t0=performance.now();
     (function f(now){const e=Math.min(1,(now-t0)/320),q=1-Math.pow(1-e,3);k=k0+(t-k0)*q;frame(sc.scrollTop);if(e<1)kRaf=requestAnimationFrame(f);else if(t===0&&!quiet)sync(true);})(t0);}
   const TARGET=[0,S0,END];
   function go(to){
     if(anim||to===state)return;anim=true;
     const from=sc.scrollTop,target=TARGET[to],t0=performance.now(),dur=440;
-    sc.style.overflowY='hidden';header(to>0);if(to<2&&k>0)setK(0);if(to<2&&xT)setX(0);
+    snapOn(false);sc.style.overflowY='hidden';header(to>0);if(to<2&&k>0)setK(0);if(to<2&&xT)setX(0);
     (function step(now){const e=Math.min(1,(now-t0)/dur),q=1-Math.pow(1-e,4);
       const st=from+(target-from)*q;sc.scrollTop=st;frame(st);
       if(e<1){requestAnimationFrame(step);return;}
-      state=to;sc.style.overflowY='auto';sync(true);requestAnimationFrame(()=>{anim=false;});})(t0);}
+      state=to;sc.style.overflowY='auto';if(to===2)snapOn(true);sync(true);requestAnimationFrame(()=>{anim=false;});})(t0);}
   sc.addEventListener('scroll',()=>{const st=sc.scrollTop;frame(st);if(anim)return;
     if(state<2&&st>TARGET[state]+2)go(state+1);
     else if(state>0&&st<TARGET[state]-2)go(state-1);
@@ -1030,6 +1040,7 @@ function stickyFai(root){
   dayBar.addEventListener('pointermove',e=>{if(dy0==null||fired)return;const d=(e.clientY-dy0)/(SCALE||1);
     if(d<-22){fired=true;if(xT===1)setX(0);else if(kT===0)setK(1);}else if(d>22){fired=true;if(kT===1)setK(0);else if(xT===0)setX(1);}});
   const upH=()=>{dy0=null;};dayBar.addEventListener('pointerup',upH);dayBar.addEventListener('pointercancel',upH);
+  snapMargin();
   requestAnimationFrame(()=>{frame(sc.scrollTop);sync(true);});
   return true;
 }
