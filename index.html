@@ -1339,7 +1339,10 @@ function buildPan(n,cv,name){
   const pinFor=(ci,n,m,ti)=>{const h=hh(ci,n,m,Math.floor(ti/3));if(FOC.list&&FOC.ci===ci&&FOC.n===n)return FOC.list[h%FOC.list.length];
     return h%NP;};   // pins stay spread evenly over the wall (the original mix); areas only name where you are
   const isMusic=t=>t[5].length&&/url\(/.test(JSON.stringify(t[5]));
-  const photoFor=(k,ti,n,m)=>{const ph=PINS[k][8];return ph[(ti+hh(n,m))%ph.length];};
+  /* photos kept off the blind wall (the pins still own them elsewhere): the two carry-on suitcases and the market kimbap */
+  const WALL_SKIP=new Set(['0a2fb49803','627c2eead1','202ccf3fd9']);
+  const PH=k=>{const a=PINS[k][8].filter(h=>!WALL_SKIP.has(h));return a.length?a:PINS[(k+1)%NP][8].filter(h=>!WALL_SKIP.has(h));};
+  const photoFor=(k,ti,n,m)=>{const ph=PH(k);return ph[(ti+hh(n,m))%ph.length];};
   const noteFor=(k,ti,n,m)=>{const nt=PINS[k][12];return nt[(ti+hh(m,n))%nt.length];};
   // memo cards to reuse (rendered from the Figma memo tiles, icons included)
   let MEMO_SRC=null;
@@ -1432,8 +1435,8 @@ function buildPan(n,cv,name){
   function makeGroup(i,j){const sx=(j&1)*GPX/2,qx=i*GPX+sx+209.4,qy=j*GPY+486,cy=CY();
     const wx=GK*(qx-CX)+CX-K0[0],wy=GK*(qy-cy)+cy-K0[1];
     const R=regionTiles(wx,wy),p1=R.find(r=>!r.tl[5].length);
-    const k=pinFor(p1.ci,p1.n,p1.m,p1.ti),P0=PINS[k],main=photoFor(k,p1.ti,p1.n,p1.m),rest=P0[8].filter(h=>h!==main);
-    const other=rest[0]||main,peek=PINS[(k+7)%NP][8][0];
+    const k=pinFor(p1.ci,p1.n,p1.m,p1.ti),P0=PINS[k],main=photoFor(k,p1.ti,p1.n,p1.m),rest=PH(k).filter(h=>h!==main);
+    const other=rest[0]||main,peek=PH((k+7)%NP)[0];
     const nts=P0[12],a0=hh(i,j)%nts.length,L=LAYOUTS[mod(i*2+j,3)];
     const g=document.createElement('div');g.style.cssText='left:0;top:0;width:0;height:0;will-change:transform';
     g._jx=(hh(i,j,1)%41)-20;g._jy=(hh(j,i,2)%41)-20;
@@ -1466,7 +1469,7 @@ function buildPan(n,cv,name){
         el.style.transform=`translate3d(${(i*GPX+sx+bx+el._jx).toFixed(1)}px,${(j*GPY+by+el._jy).toFixed(1)}px,0)`;spread(el,SPREAD);}}
     for(const [key,el] of cells)if(!need.has(key)){el.remove();cells.delete(key);}}
   // no photo shown twice on one screen: tiles already on screen keep theirs, newcomers take an unused photo
-  const POOL=[...new Set(PINS.flatMap(p=>p[8]))];let shownBefore=new Set(),dedupT=0;
+  const POOL=[...new Set(PINS.flatMap(p=>p[8]))].filter(h=>!WALL_SKIP.has(h));let shownBefore=new Set(),dedupT=0;
   function setTilePhoto(el,h){el.dataset.bg=h;if(el._rk)REPL.set(el._rk,h);if(el._ph)el._ph.style.backgroundImage=IMGX(h);else if(el.dataset.tile==='photo')setImg(el,h);}
   /* no photo twice on one screen, decided before a tile comes into view: tiles within a margin around the screen are
      checked, any tile that has been on screen keeps its photo, and only tiles still off screen are given another one,
@@ -1483,7 +1486,7 @@ function buildPan(n,cv,name){
     const used=new Set();
     for(const el of near){let h=el.dataset.bg;const locked=seen.has(K(el));
       if(used.has(h)&&!locked){const k=+el.dataset.pin||0;
-        const cand=[...PINS[k%NP][8],...POOL.slice(hh(k,7)%POOL.length),...POOL];h=cand.find(x=>!used.has(x))||h;setTilePhoto(el,h);}
+        const cand=[...PH(k%NP),...POOL.slice(hh(k,7)%POOL.length),...POOL];h=cand.find(x=>!used.has(x))||h;setTilePhoto(el,h);}
       used.add(h);}
     const keep=new Set(near.map(K));wasNear=keep;seen=new Set([...seen].filter(k=>keep.has(k)));inView.forEach(k=>seen.add(k));regionCheck();}
   /* header title follows the area you are looking at: the region most of the pins in the middle of the screen belong to.
